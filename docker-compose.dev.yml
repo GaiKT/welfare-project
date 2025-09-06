@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: welfare-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: welfare_db
+      POSTGRES_USER: welfare_user
+      POSTGRES_PASSWORD: welfare_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - welfare-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U welfare_user -d welfare_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Next.js Application (Development)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: welfare-app-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://welfare_user:welfare_password@postgres:5432/welfare_db
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - welfare-network
+
+volumes:
+  postgres_dev_data:
+    driver: local
+
+networks:
+  welfare-network:
+    driver: bridge
