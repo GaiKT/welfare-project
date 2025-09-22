@@ -7,10 +7,19 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
 
+    // Root route - redirect to appropriate dashboard or signin
+    if (pathname === "/") {
+      if (!token) {
+        return NextResponse.redirect(new URL("/signin", req.url));
+      }
+      // Let the root page component handle the dashboard redirect
+      return NextResponse.next();
+    }
+
     // Admin panel routes - require admin authentication
     if (pathname.startsWith("/admin")) {
       if (!token || token.userType !== UserType.ADMIN) {
-        return NextResponse.redirect(new URL("/auth/signin", req.url));
+        return NextResponse.redirect(new URL("/signin", req.url));
       }
 
       // Super admin only routes
@@ -34,7 +43,7 @@ export default withAuth(
     // User dashboard routes - require user authentication
     if (pathname.startsWith("/dashboard")) {
       if (!token || token.userType !== UserType.USER) {
-        return NextResponse.redirect(new URL("/auth/signin", req.url));
+        return NextResponse.redirect(new URL("/signin", req.url));
       }
     }
 
@@ -89,16 +98,20 @@ export default withAuth(
         const { pathname } = req.nextUrl;
         
         // Allow access to public routes
-        if (pathname.startsWith("/auth") || 
-            pathname === "/" || 
+        if (pathname.startsWith("/signin") || 
+            pathname.startsWith("/signup") ||
             pathname.startsWith("/api/auth")) {
           return true;
         }
 
+        // Root route requires authentication
+        if (pathname === "/") {
+          return !!token;
+        }
+
         // Require authentication for protected routes
         if (pathname.startsWith("/admin") || 
-            pathname.startsWith("/dashboard") ||
-            pathname.startsWith("/api/")) {
+            pathname.startsWith("/dashboard")) {
           return !!token;
         }
 
@@ -110,6 +123,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    "/",
     "/admin/:path*",
     "/dashboard/:path*",
     "/api/admin/:path*",

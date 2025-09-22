@@ -66,10 +66,10 @@ export default function SignInForm() {
             />            
             <div className="flex flex-col justify-center ml-3">
               <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-                Sign In
+                เข้าสู่ระบบ
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Please enter your credentials to access the welfare system
+                กรุณาใส่ข้อมูลประจำตัวของคุณเพื่อเข้าถึงระบบสวัสดิการ
               </p>
             </div>
           </div>
@@ -86,7 +86,7 @@ export default function SignInForm() {
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
-                Admin Login
+                ผู้ดูแลระบบ
               </button>
               <button
                 type="button"
@@ -97,7 +97,7 @@ export default function SignInForm() {
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
-                Employee Login
+                สมาชิก
               </button>
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function SignInForm() {
                 
                 <div>
                   <Label>
-                    {loginType === "admin" ? "Username/Email" : "Employee ID"} <span className="text-error-500">*</span>
+                    {loginType === "admin" ? "ชื่อผู้ใช้/อีเมล" : "รหัสสมาชิก"} <span className="text-error-500">*</span>
                   </Label>
                   <input
                     placeholder={loginType === "admin" ? "admin@company.com" : "EMP001"}
@@ -127,7 +127,7 @@ export default function SignInForm() {
                 
                 <div>
                   <Label>
-                    Password <span className="text-error-500">*</span>
+                    รหัสผ่าน <span className="text-error-500">*</span>
                   </Label>
                   <div className="relative">
                     <input
@@ -155,14 +155,14 @@ export default function SignInForm() {
                   <div className="flex items-center gap-3">
                     <Checkbox checked={isChecked} onChange={setIsChecked} />
                     <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
-                      Remember me
+                      จำฉันไว้
                     </span>
                   </div>
                   <Link
                     href="/auth/forgot-password"
                     className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
                   >
-                    Forgot password?
+                    ลืมรหัสผ่าน?
                   </Link>
                 </div>
                 
@@ -172,7 +172,7 @@ export default function SignInForm() {
                     type="submit"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Signing in..." : "Sign In"}
+                    {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
                   </button>
                 </div>
               </div>

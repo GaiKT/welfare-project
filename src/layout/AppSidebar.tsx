@@ -1,9 +1,11 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useSidebar } from "../context/SidebarContext";
+import { UserType } from "@/types/auth";
 import {
   BoxCubeIcon,
   CalenderIcon,
@@ -11,10 +13,7 @@ import {
   GridIcon,
   HorizontaLDots,
   ListIcon,
-  PageIcon,
   PieChartIcon,
-  PlugInIcon,
-  TableIcon,
   UserCircleIcon,
 } from "../icons/index";
 
@@ -22,87 +21,113 @@ type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+  subItems?: { name: string; path: string; pro?: boolean; new?: boolean; roles?: UserType[] }[];
+  roles?: UserType[]; // Roles that can access this item
 };
 
 const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
-    name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-  },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
+    name: "ภาพรวม",
+    subItems: [{ name: "Overview", path: "/", pro: false }],
+    roles: [UserType.ADMIN, UserType.USER], // Both can access
   },
   {
     icon: <UserCircleIcon />,
-    name: "User Profile",
+    name: "สวัสดิการ",
     path: "/profile",
+    roles: [UserType.ADMIN, UserType.USER], // Both can access
   },
-
   {
-    name: "Forms",
     icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
-  {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
-  {
-    name: "Pages",
-    icon: <PageIcon />,
+    name: "ตรวจสอบสิทธิ",
     subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
-      { name: "404 Error", path: "/error-404", pro: false },
+      { name: "ตรวจสอบสถานะคำร้อง", path: "/claims", pro: false, roles: [UserType.ADMIN, UserType.USER] },
+      { name: "ตรวจสอบยอดสวัสดิการ", path: "/admin/claims", pro: false, roles: [UserType.ADMIN, UserType.USER] }, // Admin only
     ],
+    roles: [UserType.ADMIN, UserType.USER],
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "การจัดการสวัสดิการ",
+    subItems: [
+      { name: "เพิ่มสวัสดิการ", path: "/admin/welfare", pro: false, roles: [UserType.ADMIN] }, // Admin only
+      { name: "แก้ไขสวัสดิการ", path: "/admin/welfare/create", pro: false, roles: [UserType.ADMIN] }, // Admin only
+    ],
+    roles: [UserType.ADMIN], // Admin only
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "การจัดการผู้ใช้",
+    subItems: [
+      { name: "ผู้ใช้ทั้งหมด", path: "/admin/users", pro: false, roles: [UserType.ADMIN] }, // Admin only
+      { name: "จัดการผู้ดูแลระบบ", path: "/admin/admins", pro: false, roles: [UserType.ADMIN] }, // Admin only
+    ],
+    roles: [UserType.ADMIN], // Admin only
+  },
+  {
+    icon: <CalenderIcon />,
+    name: "ปฏิทิน",
+    path: "/calendar",
+    roles: [UserType.ADMIN, UserType.USER], // Both can access
   },
 ];
 
 const othersItems: NavItem[] = [
   {
     icon: <PieChartIcon />,
-    name: "Charts",
+    name: "รายงาน",
     subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
+      { name: "รายงานสวัสดิการ", path: "/admin/reports/welfare", pro: false, roles: [UserType.ADMIN] },
+      { name: "รายงานคำร้องขอรับสวัสดิการ", path: "/admin/reports/claims", pro: false, roles: [UserType.ADMIN] },
     ],
+    roles: [UserType.ADMIN], // Admin only
   },
   {
     icon: <BoxCubeIcon />,
-    name: "UI Elements",
+    name: "การตั้งค่าระบบ",
     subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
+      { name: "ตั้งค่าทั่วไป", path: "/admin/settings", pro: false, roles: [UserType.ADMIN] },
+      { name: "ตรวจสอบ Activity Log", path: "/admin/audit-logs", pro: false, roles: [UserType.ADMIN] },
     ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
+    roles: [UserType.ADMIN], // Admin only
   },
 ];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  // Function to check if user has access to a nav item
+  const hasAccess = (item: NavItem): boolean => {
+    if (!item.roles || !session?.user?.userType) return true;
+    return item.roles.includes(session.user.userType);
+  };
+
+  // Function to filter submenu items based on user role
+  const filterSubItems = (subItems: NavItem['subItems']) => {
+    if (!subItems) return undefined;
+    return subItems.filter(subItem => {
+      if (!subItem.roles || !session?.user?.userType) return true;
+      return subItem.roles.includes(session.user.userType);
+    });
+  };
 
   const renderMenuItems = (
     navItems: NavItem[],
     menuType: "main" | "others"
   ) => (
     <ul className="flex flex-col gap-4">
-      {navItems.map((nav, index) => (
+      {navItems.filter(hasAccess).map((nav, index) => {
+        const filteredSubItems = filterSubItems(nav.subItems);
+        
+        // Don't render if no subitems are accessible
+        if (nav.subItems && (!filteredSubItems || filteredSubItems.length === 0)) {
+          return null;
+        }
+
+        return (
         <li key={nav.name}>
           {nav.subItems ? (
             <button
@@ -177,7 +202,7 @@ const AppSidebar: React.FC = () => {
               }}
             >
               <ul className="mt-2 space-y-1 ml-9">
-                {nav.subItems.map((subItem) => (
+                {filteredSubItems?.map((subItem) => (
                   <li key={subItem.name}>
                     <Link
                       href={subItem.path}
@@ -219,7 +244,8 @@ const AppSidebar: React.FC = () => {
             </div>
           )}
         </li>
-      ))}
+        );
+      }).filter(Boolean)}
     </ul>
   );
 
@@ -309,22 +335,18 @@ const AppSidebar: React.FC = () => {
       >
         <Link href="/">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <Image
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <Image
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
+          <div className="flex items-center gap-2 ps-7">
+            <Image
+              width={50}
+              height={50}
+              src="/images/logo/welfareLogo.png"
+              alt="Logo"
+            />            
+            <div className="flex flex-col justify-center font-bold text-lg">
+              <span className="text-gray-800 dark:text-white/90">Welfare</span>
+              <span className="text-gray-500 dark:text-gray-400 text-sm -mt-1">Management System</span>
+            </div>
+          </div>
           ) : (
             <Image
               src="/images/logo/logo-icon.svg"

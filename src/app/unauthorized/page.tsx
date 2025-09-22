@@ -30,7 +30,7 @@ export default function UnauthorizedPage() {
             Go Back Home
           </Link>
           <Link
-            href="/auth/signin"
+            href="/signin"
             className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
           >
             Sign In with Different Account

@@ -91,7 +91,7 @@ export default function UserInfo({ showDetails = true, className = "" }: UserInf
               className="ml-2 px-2 py-1 text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
               title="Sign out"
             >
-              Sign Out
+              ออกจากระบบ
             </button>
           </div>
         </div>
