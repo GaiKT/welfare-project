@@ -3,16 +3,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { AdminRole } from "@/types/next-auth";
+import { AdminRole } from "@/types/auth";
 
 // GET /api/auth/admins/[id] - Get specific admin
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const { id } = params;
+    const { id } = await params;
     
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -52,11 +52,11 @@ export async function GET(
 // PUT /api/auth/admins/[id] - Update admin
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const { id } = params;
+    const { id } = await params;
     
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -163,11 +163,11 @@ export async function PUT(
 // DELETE /api/auth/admins/[id] - Delete admin (Super Admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const { id } = params;
+    const { id } = await params;
     
     if (!session || session.user.role !== AdminRole.SUPER_ADMIN) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

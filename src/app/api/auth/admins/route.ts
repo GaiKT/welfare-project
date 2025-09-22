@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { AdminRole } from "@/types/next-auth";
+import { AdminRole } from "@/types/auth";
 
 // GET /api/auth/admins - Get all admins (Super Admin only)
 export async function GET() {

@@ -1,5 +1,5 @@
 import { useSession } from "next-auth/react";
-import { AdminRole } from "@/types/next-auth";
+import { AdminRole } from "@/types/auth";
 
 /**
  * Hook to get current session with type safety
@@ -21,7 +21,7 @@ export function useAuth() {
 export function useRole(requiredRole: AdminRole) {
   const { user, isLoading } = useAuth();
   
-  const hasRequiredRole = user ? hasRole(user.role, requiredRole) : false;
+  const hasRequiredRole = user && user.role ? hasRole(user.role, requiredRole) : false;
   
   return {
     hasRole: hasRequiredRole,

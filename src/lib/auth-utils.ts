@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { AdminRole } from "@/types/next-auth";
+import { AdminRole } from "@/types/auth";
 
 /**
  * Get current session server-side
@@ -39,7 +39,7 @@ export function hasRole(userRole: AdminRole, requiredRole: AdminRole): boolean {
 export async function requireRole(requiredRole: AdminRole) {
   const session = await requireAuth();
   
-  if (!hasRole(session.user.role, requiredRole)) {
+  if (!session.user.role || !hasRole(session.user.role, requiredRole)) {
     throw new Error("Insufficient permissions");
   }
   
@@ -94,7 +94,7 @@ export function withAuth<T extends any[]>(
       }
 
       // Check role requirement
-      if (options?.requiredRole && !hasRole(session.user.role, options.requiredRole)) {
+      if (options?.requiredRole && (!session.user.role || !hasRole(session.user.role, options.requiredRole))) {
         return createErrorResponse("Insufficient permissions", 403);
       }
 

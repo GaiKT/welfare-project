@@ -1,103 +1,117 @@
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { PrismaClient } from "../generated/prisma";
+import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Starting database seeding...");
+  console.log("🌱 Starting seed...");
 
-  // Create a default super admin
-  const defaultAdminExists = await prisma.admin.findFirst({
-    where: { username: "superadmin" }
+  // Create default super admin
+  const hashedPassword = await bcrypt.hash("admin123", 12);
+  
+  const superAdmin = await prisma.admin.upsert({
+    where: { username: "superadmin" },
+    update: {},
+    create: {
+      username: "superadmin",
+      email: "superadmin@welfare.com",
+      password: hashedPassword,
+      name: "Super Administrator",
+      role: "SUPER_ADMIN",
+      isActive: true,
+    },
   });
 
-  if (!defaultAdminExists) {
-    const hashedPassword = await bcrypt.hash("admin123", 12);
-    
-    const superAdmin = await prisma.admin.create({
-      data: {
-        username: "superadmin",
-        email: "admin@welfare.com",
-        password: hashedPassword,
-        name: "Super Administrator",
-        role: "SUPER_ADMIN",
-        isActive: true
-      }
-    });
+  console.log("✅ Created super admin:", superAdmin.username);
 
-    console.log("✅ Created super admin:", {
-      id: superAdmin.id,
-      username: superAdmin.username,
-      email: superAdmin.email,
-      role: superAdmin.role
-    });
+  // Create default admin
+  const adminPassword = await bcrypt.hash("admin123", 12);
+  
+  const admin = await prisma.admin.upsert({
+    where: { username: "admin" },
+    update: {},
+    create: {
+      username: "admin",
+      email: "admin@welfare.com",
+      password: adminPassword,
+      name: "Administrator",
+      role: "ADMIN",
+      isActive: true,
+    },
+  });
 
-    // Create initial audit log
-    await prisma.auditLog.create({
-      data: {
-        action: "INITIAL_SETUP",
-        entity: "Admin",
-        entityId: superAdmin.id,
-        adminId: superAdmin.id
-      }
-    });
-
-    console.log("📝 Created initial audit log");
-  } else {
-    console.log("ℹ️ Super admin already exists, skipping creation");
-  }
+  console.log("✅ Created admin:", admin.username);
 
   // Create sample welfare programs
-  const existingWelfare = await prisma.welfare.findFirst();
+  const medicalWelfare = await prisma.welfare.upsert({
+    where: { id: "medical-welfare-id" },
+    update: {},
+    create: {
+      id: "medical-welfare-id",
+      name: "Medical Welfare",
+      description: "Medical expenses reimbursement up to $5000 per year",
+      budget: 50000,
+      maxUsed: 5000,
+      duration: 365, // days
+    },
+  });
+
+  const educationWelfare = await prisma.welfare.upsert({
+    where: { id: "education-welfare-id" },
+    update: {},
+    create: {
+      id: "education-welfare-id",
+      name: "Education Welfare",
+      description: "Training and education support up to $3000 per year",
+      budget: 30000,
+      maxUsed: 3000,
+      duration: 365,
+    },
+  });
+
+  console.log("✅ Created welfare programs:", [medicalWelfare.name, educationWelfare.name]);
+
+  // Create sample users
+  const userPassword = await bcrypt.hash("user123", 12);
   
-  if (!existingWelfare) {
-    const welfarePrograms = [
-      {
-        name: "Health Insurance",
-        description: "Comprehensive health insurance coverage for employees",
-        budget: 50000.00,
-        maxUsed: 5000.00,
-        duration: 365 // days
-      },
-      {
-        name: "Education Allowance",
-        description: "Financial support for continuing education and training",
-        budget: 30000.00,
-        maxUsed: 2000.00,
-        duration: 365
-      },
-      {
-        name: "Emergency Fund",
-        description: "Emergency financial assistance for unexpected situations",
-        budget: 20000.00,
-        maxUsed: 1500.00,
-        duration: 365
-      },
-      {
-        name: "Fitness Program",
-        description: "Gym membership and fitness-related expenses",
-        budget: 15000.00,
-        maxUsed: 1000.00,
-        duration: 365
-      }
-    ];
+  const user1 = await prisma.user.upsert({
+    where: { identity: "EMP001" },
+    update: {},
+    create: {
+      identity: "EMP001",
+      firstName: "John",
+      lastName: "Doe",
+      title: "Software Engineer",
+      email: "john.doe@company.com",
+      phone: "+1234567890",
+      password: userPassword,
+      isActive: true,
+    },
+  });
 
-    for (const welfare of welfarePrograms) {
-      const created = await prisma.welfare.create({
-        data: welfare
-      });
-      console.log(`✅ Created welfare program: ${created.name}`);
-    }
-  } else {
-    console.log("ℹ️ Welfare programs already exist, skipping creation");
-  }
+  const user2 = await prisma.user.upsert({
+    where: { identity: "EMP002" },
+    update: {},
+    create: {
+      identity: "EMP002",
+      firstName: "Jane",
+      lastName: "Smith",
+      title: "Product Manager",
+      email: "jane.smith@company.com",
+      phone: "+1234567891",
+      password: userPassword,
+      isActive: true,
+    },
+  });
 
-  console.log("🎉 Database seeding completed!");
+  console.log("✅ Created users:", [user1.identity, user2.identity]);
+
+  console.log("🎉 Seed completed successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Error during seeding:", e);
+    console.error("❌ Seed failed:", e);
     process.exit(1);
   })
   .finally(async () => {

@@ -3,13 +3,14 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { AdminRole } from "@/types/next-auth";
+import { UserType, AdminRole, AuthAdmin, AuthRegularUser } from "@/types/auth";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      id: "admin-credentials",
+      name: "Admin Credentials",
       credentials: {
         username: { label: "Username", type: "text", placeholder: "Enter your username" },
         password: { label: "Password", type: "password" }
@@ -68,10 +69,71 @@ export const authOptions: NextAuthOptions = {
             email: admin.email,
             username: admin.username,
             role: admin.role,
+            userType: UserType.ADMIN,
             image: admin.image
-          };
+          } as AuthAdmin;
         } catch (error) {
-          console.error("Authentication error:", error);
+          console.error("Admin authentication error:", error);
+          return null;
+        }
+      }
+    }),
+    CredentialsProvider({
+      id: "user-credentials",
+      name: "User Credentials", 
+      credentials: {
+        identity: { label: "Employee ID", type: "text", placeholder: "Enter your employee ID" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.identity || !credentials?.password) {
+          throw new Error("Missing employee ID or password");
+        }
+
+        try {
+          // Find user by identity or email
+          const user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { identity: credentials.identity },
+                { email: credentials.identity }
+              ]
+            }
+          });
+
+          if (!user || !user.password) {
+            throw new Error("Invalid credentials");
+          }
+
+          // Check if user is active
+          if (!user.isActive) {
+            throw new Error("Account is deactivated");
+          }
+
+          // Verify password
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+          
+          if (!isPasswordValid) {
+            throw new Error("Invalid credentials");
+          }
+
+          // Update last login
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLogin: new Date() }
+          });
+
+          return {
+            id: user.id,
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email,
+            identity: user.identity,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            userType: UserType.USER,
+          } as AuthRegularUser;
+        } catch (error) {
+          console.error("User authentication error:", error);
           return null;
         }
       }
@@ -88,9 +150,20 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger, session }) {
       // Initial sign in
       if (user) {
-        token.id = user.id;
-        token.username = (user as any).username;
-        token.role = (user as any).role;
+        const authUser = user as AuthAdmin | AuthRegularUser;
+        token.id = authUser.id;
+        token.userType = authUser.userType;
+        
+        if (authUser.userType === UserType.ADMIN) {
+          const adminUser = authUser as AuthAdmin;
+          token.username = adminUser.username;
+          token.role = adminUser.role;
+        } else {
+          const regularUser = authUser as AuthRegularUser;
+          token.identity = regularUser.identity;
+          token.firstName = regularUser.firstName;
+          token.lastName = regularUser.lastName;
+        }
       }
 
       // Handle session updates
@@ -104,12 +177,20 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        session.user.username = token.username as string;
-        session.user.role = token.role as AdminRole;
+        session.user.userType = token.userType as UserType;
+        
+        if (token.userType === UserType.ADMIN) {
+          session.user.username = token.username as string;
+          session.user.role = token.role as AdminRole;
+        } else {
+          session.user.identity = token.identity as string;
+          session.user.firstName = token.firstName as string;
+          session.user.lastName = token.lastName as string;
+        }
       }
       return session;
     },
-    async signIn({ user, account, profile }) {
+    async signIn() {
       return true;
     },
     async redirect({ url, baseUrl }) {
@@ -126,8 +207,8 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signOut({ token }) {
-      if (token?.id) {
-        // Create audit log for logout
+      if (token?.id && token?.userType === UserType.ADMIN) {
+        // Create audit log for admin logout
         await prisma.auditLog.create({
           data: {
             action: "LOGOUT",

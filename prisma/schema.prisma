@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -40,16 +39,19 @@ enum AdminRole {
 
 model User {
   id        String   @id @default(uuid())
-  identity  String   @unique
+  identity  String   @unique // Employee ID or similar identifier
   firstName String   
   lastName  String
   title     String
   email     String?   @unique
   phone     String?
+  password  String?   // Optional password for user login
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  usages    WelfareClaims[]
+  claims    WelfareClaims[]
 }
 
 model Welfare {
@@ -70,6 +72,7 @@ model WelfareClaims {
   userId     String
   welfareId  String
   amount     Float
+  status     ClaimStatus @default(PENDING)
   usedAt     DateTime @default(now())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -79,6 +82,13 @@ model WelfareClaims {
 
   @@index([userId])
   @@index([welfareId])
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
 }
 
 model AuditLog {

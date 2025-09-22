@@ -113,7 +113,7 @@ enum AdminRole {
 ### Server-side Authentication
 ```typescript
 import { requireAuth, requireRole } from "@/lib/auth-utils";
-import { AdminRole } from "@/types/next-auth";
+import { AdminRole } from "@/types/auth";
 
 // Require any authentication
 const session = await requireAuth();
@@ -133,7 +133,7 @@ const { hasRole } = useRole(AdminRole.ADMIN);
 ### Protected API Route
 ```typescript
 import { withAuth } from "@/lib/auth-utils";
-import { AdminRole } from "@/types/next-auth";
+import { AdminRole } from "@/types/auth";
 
 export const GET = withAuth(
   async (request) => {
