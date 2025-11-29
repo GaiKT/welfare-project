@@ -52,10 +52,17 @@ const navItems: NavItem[] = [
   },
   {
     icon: <ListIcon />,
-    name: "อนุมัติคำร้อง",
+    name: "อนุมัติคำร้อง (Admin)",
     subItems: [
-      { name: "รอตรวจสอบ (Admin)", path: "/admin/claims", pro: false, roles: [UserType.ADMIN] },
-      { name: "รออนุมัติสุดท้าย (Manager)", path: "/admin/claims", pro: false, roles: [UserType.ADMIN] },
+      { name: "รอตรวจสอบ", path: "/admin/claims", pro: false, roles: [UserType.ADMIN] },
+    ],
+    roles: [UserType.ADMIN],
+  },
+  {
+    icon: <ListIcon />,
+    name: "อนุมัติคำร้อง (Manager)",
+    subItems: [
+      { name: "รออนุมัติขั้นสุดท้าย", path: "/admin/manager-approval", pro: false, roles: [UserType.ADMIN] },
     ],
     roles: [UserType.ADMIN],
   },
