@@ -3,6 +3,10 @@ import { getCurrentUser } from "@/lib/auth-permissions";
 import { prisma } from "@/lib/prisma";
 import { UserType } from "@/types/auth";
 
+/**
+ * GET /api/claims/[id]
+ * Get detailed claim information with full relationships
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -17,47 +21,108 @@ export async function GET(
       );
     }
 
-    let whereClause: any = { id };
-
-    // If user type is USER, only allow access to their own claims
-    if (user.userType === UserType.USER) {
-      whereClause.userId = user.id;
-    }
-
-    const claim = await prisma.welfareClaims.findFirst({
-      where: whereClause,
+    const claim = await prisma.welfareClaims.findUnique({
+      where: { id },
       include: {
         user: {
           select: {
+            id: true,
             identity: true,
             firstName: true,
             lastName: true,
             title: true,
             email: true,
+            phone: true,
           },
         },
         welfare: {
           select: {
+            id: true,
             name: true,
             description: true,
             maxUsed: true,
+          },
+        },
+        documents: {
+          select: {
+            id: true,
+            fileName: true,
+            fileUrl: true,
+            fileType: true,
+            fileSize: true,
+            uploadedAt: true,
+          },
+          orderBy: {
+            uploadedAt: "asc",
+          },
+        },
+        approvals: {
+          include: {
+            approver: {
+              select: {
+                name: true,
+                username: true,
+                role: true,
+                signatureUrl: true,
+              },
+            },
+          },
+          orderBy: {
+            approvedAt: "asc",
+          },
+        },
+        comments: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+        adminApprover: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            signatureUrl: true,
+          },
+        },
+        managerApprover: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            signatureUrl: true,
           },
         },
       },
     });
 
     if (!claim) {
+      return NextResponse.json({ error: "Claim not found" }, { status: 404 });
+    }
+
+    // Check permissions - Users can only view their own claims
+    if (user.userType === UserType.USER && claim.userId !== user.id) {
       return NextResponse.json(
-        { error: "Claim not found" },
-        { status: 404 }
+        { error: "You can only view your own claims" },
+        { status: 403 }
       );
     }
 
-    return NextResponse.json({ claim });
+    return NextResponse.json({
+      success: true,
+      claim,
+    });
   } catch (error) {
-    console.error("Error fetching claim:", error);
+    console.error("Get claim detail error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch claim" },
+      { error: "Failed to get claim details" },
       { status: 500 }
     );
   }
@@ -103,7 +168,7 @@ export async function PUT(
       );
     }
 
-    let updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     // Users can only update amount of pending claims
     if (user.userType === UserType.USER) {
@@ -129,7 +194,7 @@ export async function PUT(
     } else {
       // Admins can update both status and amount
       if (status !== undefined) {
-        if (!["PENDING", "APPROVED", "REJECTED", "COMPLETED"].includes(status)) {
+        if (!["PENDING", "IN_REVIEW", "ADMIN_APPROVED", "MANAGER_APPROVED", "REJECTED", "COMPLETED"].includes(status)) {
           return NextResponse.json(
             { error: "Invalid status" },
             { status: 400 }

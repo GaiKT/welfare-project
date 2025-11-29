@@ -14,44 +14,55 @@ datasource db {
 }
 
 model Admin {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  email     String?  @unique
-  password  String
-  name      String?
-  image     String?
-  role      AdminRole @default(ADMIN)
-  isActive  Boolean   @default(true)
-  lastLogin DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                 String    @id @default(uuid())
+  username           String    @unique
+  email              String?   @unique
+  password           String
+  name               String?
+  image              String?
+  role               AdminRole @default(ADMIN)
+  isActive           Boolean   @default(true)
+  isFirstLogin       Boolean   @default(true)
+  mustChangePassword Boolean   @default(true)
+  signatureUrl       String? // Path to digital signature image
+  lastLogin          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  auditLogs AuditLog[]
-  accounts  Account[]
-  sessions  Session[]
+  auditLogs       AuditLog[]
+  accounts        Account[]
+  sessions        Session[]
+  approvals       ClaimApproval[]
+  claimsAsAdmin   WelfareClaims[] @relation("AdminApprover")
+  claimsAsManager WelfareClaims[] @relation("ManagerApprover")
 }
 
 enum AdminRole {
-  SUPER_ADMIN
+  PRIMARY
   ADMIN
-  MODERATOR
+  MANAGER
 }
 
 model User {
-  id        String   @id @default(uuid())
-  identity  String   @unique // Employee ID or similar identifier
-  firstName String   
-  lastName  String
-  title     String
-  email     String?   @unique
-  phone     String?
-  password  String?   // Optional password for user login
-  isActive  Boolean   @default(true)
-  lastLogin DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                 String    @id @default(uuid())
+  identity           String    @unique // Employee ID or similar identifier
+  firstName          String
+  lastName           String
+  title              String
+  email              String?   @unique
+  phone              String?
+  password           String? // Optional password for user login
+  isActive           Boolean   @default(true)
+  isFirstLogin       Boolean   @default(true)
+  mustChangePassword Boolean   @default(true)
+  lastLogin          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  claims    WelfareClaims[]
+  claims        WelfareClaims[]
+  welfareQuotas WelfareQuota[]
+  notifications Notification[]
+  claimComments ClaimComment[]
 }
 
 model Welfare {
@@ -60,35 +71,160 @@ model Welfare {
   description String?
   budget      Float
   maxUsed     Float
-  duration    Int     
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  duration    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  usages      WelfareClaims[]
+  claims        WelfareClaims[]
+  welfareQuotas WelfareQuota[]
 }
 
 model WelfareClaims {
-  id         String   @id @default(uuid())
-  userId     String
-  welfareId  String
-  amount     Float
-  status     ClaimStatus @default(PENDING)
-  usedAt     DateTime @default(now())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                String      @id @default(uuid())
+  userId            String
+  welfareId         String
+  amount            Float
+  description       String?     @db.Text
+  status            ClaimStatus @default(PENDING)
+  fiscalYear        Int // Fiscal year (e.g., 2025 for July 2024 - June 2025)
+  submittedDate     DateTime    @default(now())
+  completedDate     DateTime?
+  rejectionReason   String?     @db.Text
+  adminApproverId   String?
+  adminApprovedAt   DateTime?
+  managerApproverId String?
+  managerApprovedAt DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
-  user       User     @relation(fields: [userId], references: [id])
-  welfare    Welfare  @relation(fields: [welfareId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
+  welfare         Welfare         @relation(fields: [welfareId], references: [id])
+  adminApprover   Admin?          @relation("AdminApprover", fields: [adminApproverId], references: [id])
+  managerApprover Admin?          @relation("ManagerApprover", fields: [managerApproverId], references: [id])
+  documents       ClaimDocument[]
+  approvals       ClaimApproval[]
+  comments        ClaimComment[]
+  notifications   Notification[]
 
   @@index([userId])
   @@index([welfareId])
+  @@index([fiscalYear])
+  @@index([status])
 }
 
 enum ClaimStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  COMPLETED
+  PENDING // User submitted, waiting for Admin review
+  IN_REVIEW // Admin is reviewing
+  ADMIN_APPROVED // Admin approved, waiting for Manager
+  MANAGER_APPROVED // Manager approved (same as COMPLETED)
+  REJECTED // Rejected by Admin or Manager
+  COMPLETED // Fully approved and processed
+}
+
+// Model for claim document attachments
+model ClaimDocument {
+  id         String   @id @default(uuid())
+  claimId    String
+  fileName   String
+  fileUrl    String // Path or URL to the file
+  fileType   String // MIME type (e.g., application/pdf, image/png)
+  fileSize   Int // File size in bytes
+  uploadedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  claim WelfareClaims @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@index([claimId])
+}
+
+// Model for tracking approval flow history
+model ClaimApproval {
+  id           String      @id @default(uuid())
+  claimId      String
+  approverId   String
+  approverRole AdminRole // PRIMARY, ADMIN, or MANAGER
+  status       ClaimStatus
+  comments     String?     @db.Text
+  approvedAt   DateTime    @default(now())
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  claim    WelfareClaims @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  approver Admin         @relation(fields: [approverId], references: [id])
+
+  @@index([claimId])
+  @@index([approverId])
+}
+
+// Model for claim comments (for requesting revisions)
+model ClaimComment {
+  id        String   @id @default(uuid())
+  claimId   String
+  commentBy String // User ID or Admin ID
+  userType  UserType // ADMIN or USER
+  comment   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  claim WelfareClaims @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  user  User?         @relation(fields: [commentBy], references: [id])
+
+  @@index([claimId])
+  @@index([commentBy])
+}
+
+enum UserType {
+  ADMIN
+  USER
+}
+
+// Model for in-app notifications
+model Notification {
+  id             String           @id @default(uuid())
+  userId         String // Can be User or Admin
+  type           NotificationType
+  title          String
+  message        String           @db.Text
+  isRead         Boolean          @default(false)
+  relatedClaimId String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  user  User?          @relation(fields: [userId], references: [id])
+  claim WelfareClaims? @relation(fields: [relatedClaimId], references: [id])
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+enum NotificationType {
+  CLAIM_SUBMITTED
+  CLAIM_APPROVED
+  CLAIM_REJECTED
+  CLAIM_COMMENT
+  CLAIM_COMPLETED
+  SYSTEM
+}
+
+// Model for tracking welfare quota per user per fiscal year
+model WelfareQuota {
+  id              String   @id @default(uuid())
+  userId          String
+  welfareId       String
+  fiscalYear      Int // e.g., 2025 for July 2024 - June 2025
+  totalQuota      Float // Total allowance for this welfare type
+  usedAmount      Float    @default(0)
+  remainingAmount Float // Calculated: totalQuota - usedAmount
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  welfare Welfare @relation(fields: [welfareId], references: [id])
+
+  @@unique([userId, welfareId, fiscalYear])
+  @@index([userId])
+  @@index([fiscalYear])
 }
 
 model AuditLog {
@@ -99,7 +235,7 @@ model AuditLog {
   timestamp DateTime @default(now())
   adminId   String
 
-  admin     Admin    @relation(fields: [adminId], references: [id])
+  admin Admin @relation(fields: [adminId], references: [id])
 
   @@index([adminId])
 }

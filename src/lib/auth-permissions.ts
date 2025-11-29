@@ -27,19 +27,22 @@ export async function requireAdmin() {
   return user;
 }
 
-export async function requireSuperAdmin() {
+export async function requirePrimaryAdmin() {
   const user = await requireAdmin();
-  if (user.role !== AdminRole.SUPER_ADMIN) {
-    throw new Error("Super admin access required");
+  if (user.role !== AdminRole.PRIMARY) {
+    throw new Error("Primary admin access required");
   }
   return user;
 }
 
+// Alias for backward compatibility
+export const requireSuperAdmin = requirePrimaryAdmin;
+
 export function hasPermission(userRole: AdminRole, requiredRole: AdminRole): boolean {
   const roleHierarchy = {
-    [AdminRole.SUPER_ADMIN]: 3,
-    [AdminRole.ADMIN]: 2,
-    [AdminRole.MODERATOR]: 1,
+    [AdminRole.PRIMARY]: 3,
+    [AdminRole.MANAGER]: 2,
+    [AdminRole.ADMIN]: 1,
   };
 
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
@@ -54,7 +57,7 @@ export function canManageWelfare(role: AdminRole): boolean {
 }
 
 export function canManageAdmins(role: AdminRole): boolean {
-  return role === AdminRole.SUPER_ADMIN;
+  return role === AdminRole.PRIMARY;
 }
 
 export function canViewAuditLogs(role: AdminRole): boolean {

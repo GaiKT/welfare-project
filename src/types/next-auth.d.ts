@@ -11,6 +11,9 @@ declare module "next-auth" {
       userType: UserType;
       firstName?: string;
       lastName?: string;
+      isFirstLogin?: boolean;
+      mustChangePassword?: boolean;
+      signatureUrl?: string | null;
     } & DefaultSession["user"];
   }
 
@@ -21,6 +24,9 @@ declare module "next-auth" {
     userType: UserType;
     firstName?: string;
     lastName?: string;
+    isFirstLogin?: boolean;
+    mustChangePassword?: boolean;
+    signatureUrl?: string | null;
   }
 }
 
@@ -33,5 +39,8 @@ declare module "next-auth/jwt" {
     userType: UserType;
     firstName?: string;
     lastName?: string;
+    isFirstLogin?: boolean;
+    mustChangePassword?: boolean;
+    signatureUrl?: string | null;
   }
 }

@@ -29,23 +29,35 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "ภาพรวม",
-    subItems: [{ name: "Overview", path: "/", pro: false }],
+    subItems: [{ name: "Dashboard", path: "/dashboard", pro: false }],
     roles: [UserType.ADMIN, UserType.USER], // Both can access
   },
   {
     icon: <UserCircleIcon />,
     name: "สวัสดิการ",
-    path: "/profile",
+    subItems: [
+      { name: "รายการสวัสดิการ", path: "/dashboard/welfare", pro: false, roles: [UserType.ADMIN, UserType.USER] },
+      { name: "ยื่นคำร้อง", path: "/dashboard/welfare/submit", pro: false, roles: [UserType.USER] },
+    ],
     roles: [UserType.ADMIN, UserType.USER], // Both can access
   },
   {
     icon: <ListIcon />,
-    name: "ตรวจสอบสิทธิ",
+    name: "คำร้องของฉัน",
     subItems: [
-      { name: "ตรวจสอบสถานะคำร้อง", path: "/claims", pro: false, roles: [UserType.ADMIN, UserType.USER] },
-      { name: "ตรวจสอบยอดสวัสดิการ", path: "/admin/claims", pro: false, roles: [UserType.ADMIN, UserType.USER] }, // Admin only
+      { name: "รายการคำร้อง", path: "/dashboard/claims", pro: false, roles: [UserType.USER] },
+      { name: "ประวัติคำร้อง", path: "/dashboard/claims", pro: false, roles: [UserType.USER] },
     ],
-    roles: [UserType.ADMIN, UserType.USER],
+    roles: [UserType.USER],
+  },
+  {
+    icon: <ListIcon />,
+    name: "อนุมัติคำร้อง",
+    subItems: [
+      { name: "รอตรวจสอบ (Admin)", path: "/admin/claims", pro: false, roles: [UserType.ADMIN] },
+      { name: "รออนุมัติสุดท้าย (Manager)", path: "/admin/claims", pro: false, roles: [UserType.ADMIN] },
+    ],
+    roles: [UserType.ADMIN],
   },
   {
     icon: <BoxCubeIcon />,

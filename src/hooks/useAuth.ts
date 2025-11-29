@@ -31,10 +31,17 @@ export function useRole(requiredRole: AdminRole) {
 }
 
 /**
- * Hook to check if user is super admin
+ * Hook to check if user is primary admin
  */
-export function useSuperAdmin() {
-  return useRole(AdminRole.SUPER_ADMIN);
+export function usePrimaryAdmin() {
+  return useRole(AdminRole.PRIMARY);
+}
+
+/**
+ * Hook to check if user is manager or above
+ */
+export function useManager() {
+  return useRole(AdminRole.MANAGER);
 }
 
 /**
@@ -49,9 +56,9 @@ export function useAdmin() {
  */
 function hasRole(userRole: AdminRole, requiredRole: AdminRole): boolean {
   const roleHierarchy = {
-    [AdminRole.MODERATOR]: 1,
-    [AdminRole.ADMIN]: 2,
-    [AdminRole.SUPER_ADMIN]: 3,
+    [AdminRole.ADMIN]: 1,
+    [AdminRole.MANAGER]: 2,
+    [AdminRole.PRIMARY]: 3,
   };
 
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];

@@ -70,7 +70,10 @@ export const authOptions: NextAuthOptions = {
             username: admin.username,
             role: admin.role,
             userType: UserType.ADMIN,
-            image: admin.image
+            image: admin.image,
+            isFirstLogin: admin.isFirstLogin,
+            mustChangePassword: admin.mustChangePassword,
+            signatureUrl: admin.signatureUrl
           } as AuthAdmin;
         } catch (error) {
           console.error("Admin authentication error:", error);
@@ -131,6 +134,8 @@ export const authOptions: NextAuthOptions = {
             firstName: user.firstName,
             lastName: user.lastName,
             userType: UserType.USER,
+            isFirstLogin: user.isFirstLogin,
+            mustChangePassword: user.mustChangePassword
           } as AuthRegularUser;
         } catch (error) {
           console.error("User authentication error:", error);
@@ -153,11 +158,14 @@ export const authOptions: NextAuthOptions = {
         const authUser = user as AuthAdmin | AuthRegularUser;
         token.id = authUser.id;
         token.userType = authUser.userType;
+        token.isFirstLogin = authUser.isFirstLogin;
+        token.mustChangePassword = authUser.mustChangePassword;
         
         if (authUser.userType === UserType.ADMIN) {
           const adminUser = authUser as AuthAdmin;
           token.username = adminUser.username;
           token.role = adminUser.role;
+          token.signatureUrl = adminUser.signatureUrl;
         } else {
           const regularUser = authUser as AuthRegularUser;
           token.identity = regularUser.identity;
@@ -178,10 +186,13 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.userType = token.userType as UserType;
+        session.user.isFirstLogin = token.isFirstLogin as boolean;
+        session.user.mustChangePassword = token.mustChangePassword as boolean;
         
         if (token.userType === UserType.ADMIN) {
           session.user.username = token.username as string;
           session.user.role = token.role as AdminRole;
+          session.user.signatureUrl = token.signatureUrl as string;
         } else {
           session.user.identity = token.identity as string;
           session.user.firstName = token.firstName as string;

@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-permissions";
 import { prisma } from "@/lib/prisma";
-import { UserType } from "@/types/auth";
+import { UserType, AdminRole } from "@/types/auth";
+import { getCurrentFiscalYear } from "@/lib/fiscal-year";
 
+/**
+ * GET /api/claims
+ * Get claims based on user role:
+ * - USER: see their own claims
+ * - ADMIN: see PENDING and IN_REVIEW claims (for review)
+ * - MANAGER: see ADMIN_APPROVED claims (for final approval)
+ * - PRIMARY: see all claims
+ */
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -17,15 +26,29 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const welfareId = searchParams.get("welfareId");
 
-    const whereClause: Record<string, any> = {};
+    const whereClause: Record<string, unknown> = {};
 
-    // If user type is USER, only show their claims
+    // Filter based on user type and role
     if (user.userType === UserType.USER) {
+      // Users see only their own claims
       whereClause.userId = user.id;
+    } else if (user.userType === UserType.ADMIN) {
+      // Admin role-based filtering
+      if (user.role === AdminRole.ADMIN) {
+        // ADMIN sees pending claims for review
+        if (!status) {
+          whereClause.status = { in: ["PENDING", "IN_REVIEW"] };
+        }
+      } else if (user.role === AdminRole.MANAGER) {
+        // MANAGER sees admin-approved claims for final approval
+        if (!status) {
+          whereClause.status = "ADMIN_APPROVED";
+        }
+      }
+      // PRIMARY sees all (no additional filter)
     }
-    // If user type is ADMIN, show all claims (already handled by middleware)
 
-    // Add status filter if provided
+    // Add status filter if provided (overrides role-based default)
     if (status) {
       whereClause.status = status;
     }
@@ -53,13 +76,31 @@ export async function GET(request: NextRequest) {
             maxUsed: true,
           },
         },
+        documents: {
+          select: {
+            id: true,
+            fileName: true,
+            fileUrl: true,
+            fileType: true,
+            fileSize: true,
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    return NextResponse.json({ claims });
+    return NextResponse.json({ 
+      success: true,
+      claims,
+      count: claims.length,
+    });
   } catch (error) {
     console.error("Error fetching claims:", error);
     return NextResponse.json(
@@ -158,6 +199,7 @@ export async function POST(request: NextRequest) {
         welfareId,
         amount,
         status: "PENDING",
+        fiscalYear: getCurrentFiscalYear(),
       },
       include: {
         user: {

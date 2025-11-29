@@ -40,9 +40,9 @@ export default function ProtectedRoute({
     // Check admin role requirement
     if (requiredRole && user.userType === UserType.ADMIN) {
       const roleHierarchy = {
-        [AdminRole.SUPER_ADMIN]: 3,
-        [AdminRole.ADMIN]: 2,
-        [AdminRole.MODERATOR]: 1,
+        [AdminRole.PRIMARY]: 3,
+        [AdminRole.MANAGER]: 2,
+        [AdminRole.ADMIN]: 1,
       };
 
       const userRoleLevel = roleHierarchy[user.role!];

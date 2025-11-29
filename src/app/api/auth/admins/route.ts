@@ -5,12 +5,12 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { AdminRole } from "@/types/auth";
 
-// GET /api/auth/admins - Get all admins (Super Admin only)
+// GET /api/auth/admins - Get all admins (Primary Admin only)
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== AdminRole.SUPER_ADMIN) {
+    if (!session || session.user.role !== AdminRole.PRIMARY) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -36,12 +36,12 @@ export async function GET() {
   }
 }
 
-// POST /api/auth/admins - Create new admin (Super Admin only)
+// POST /api/auth/admins - Create new admin (Primary Admin only)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== AdminRole.SUPER_ADMIN) {
+    if (!session || session.user.role !== AdminRole.PRIMARY) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

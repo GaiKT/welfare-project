@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth-permissions";
+import { requireAdmin, getCurrentUser } from "@/lib/auth-permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    await requireAdmin();
+    // Allow all authenticated users to view welfare programs
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
 
     const welfarePrograms = await prisma.welfare.findMany({
       include: {
         _count: {
           select: {
-            usages: true,
+            claims: true,
           },
         },
       },

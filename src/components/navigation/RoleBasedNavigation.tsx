@@ -24,13 +24,13 @@ const navigationItems: NavigationItem[] = [
     name: "Users Management",
     href: "/admin/users-management",
     requiredUserType: UserType.ADMIN,
-    requiredRole: AdminRole.SUPER_ADMIN,
+    requiredRole: AdminRole.PRIMARY,
   },
   {
     name: "Admin Management",
     href: "/admin/admin-management",
     requiredUserType: UserType.ADMIN,
-    requiredRole: AdminRole.SUPER_ADMIN,
+    requiredRole: AdminRole.PRIMARY,
   },
   {
     name: "Welfare Management",
@@ -97,9 +97,9 @@ export default function RoleBasedNavigation({ className = "" }: RoleBasedNavigat
     // Check admin role requirement
     if (item.requiredRole && user.userType === UserType.ADMIN) {
       const roleHierarchy = {
-        [AdminRole.SUPER_ADMIN]: 3,
-        [AdminRole.ADMIN]: 2,
-        [AdminRole.MODERATOR]: 1,
+        [AdminRole.PRIMARY]: 3,
+        [AdminRole.MANAGER]: 2,
+        [AdminRole.ADMIN]: 1,
       };
 
       const userRoleLevel = roleHierarchy[user.role!];
@@ -160,9 +160,9 @@ export function useRoleBasedNavigation() {
 
     if (item.requiredRole && user.userType === UserType.ADMIN) {
       const roleHierarchy = {
-        [AdminRole.SUPER_ADMIN]: 3,
-        [AdminRole.ADMIN]: 2,
-        [AdminRole.MODERATOR]: 1,
+        [AdminRole.PRIMARY]: 3,
+        [AdminRole.MANAGER]: 2,
+        [AdminRole.ADMIN]: 1,
       };
 
       const userRoleLevel = roleHierarchy[user.role!];

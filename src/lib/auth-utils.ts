@@ -25,9 +25,9 @@ export async function requireAuth() {
  */
 export function hasRole(userRole: AdminRole, requiredRole: AdminRole): boolean {
   const roleHierarchy = {
-    [AdminRole.MODERATOR]: 1,
-    [AdminRole.ADMIN]: 2,
-    [AdminRole.SUPER_ADMIN]: 3,
+    [AdminRole.ADMIN]: 1,
+    [AdminRole.MANAGER]: 2,
+    [AdminRole.PRIMARY]: 3,
   };
 
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
@@ -52,8 +52,8 @@ export async function requireRole(requiredRole: AdminRole) {
 export async function canAccessResource(resourceOwnerId?: string) {
   const session = await requireAuth();
   
-  // Super admins can access everything
-  if (session.user.role === AdminRole.SUPER_ADMIN) {
+  // Primary admins can access everything
+  if (session.user.role === AdminRole.PRIMARY) {
     return true;
   }
   

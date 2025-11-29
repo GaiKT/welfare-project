@@ -22,19 +22,26 @@ export default withAuth(
         return NextResponse.redirect(new URL("/signin", req.url));
       }
 
-      // Super admin only routes
+      // PRIMARY (Super Admin) only routes
       if (pathname.startsWith("/admin/users-management") || 
           pathname.startsWith("/admin/admin-management")) {
-        if (token.role !== AdminRole.SUPER_ADMIN) {
+        if (token.role !== AdminRole.PRIMARY) {
           return NextResponse.redirect(new URL("/admin/unauthorized", req.url));
         }
       }
 
-      // Admin and above routes
+      // Admin and PRIMARY routes (claim review)
       if (pathname.startsWith("/admin/welfare-management") || 
           pathname.startsWith("/admin/reports")) {
         if (!token.role || 
-            ![AdminRole.ADMIN, AdminRole.SUPER_ADMIN].includes(token.role as AdminRole)) {
+            ![AdminRole.ADMIN, AdminRole.PRIMARY].includes(token.role as AdminRole)) {
+          return NextResponse.redirect(new URL("/admin/unauthorized", req.url));
+        }
+      }
+
+      // Manager routes (final approval)
+      if (pathname.startsWith("/admin/manager-approval")) {
+        if (token.role !== AdminRole.MANAGER && token.role !== AdminRole.PRIMARY) {
           return NextResponse.redirect(new URL("/admin/unauthorized", req.url));
         }
       }
@@ -73,30 +80,30 @@ export default withAuth(
         return NextResponse.json({ error: "Authentication required" }, { status: 401 });
       }
 
-      // Admin management APIs - Super Admin only
+      // Admin management APIs - PRIMARY (Super Admin) only
       if (pathname.startsWith("/api/admin") || 
           pathname.startsWith("/api/users-management")) {
-        if (token.userType !== UserType.ADMIN || token.role !== AdminRole.SUPER_ADMIN) {
+        if (token.userType !== UserType.ADMIN || token.role !== AdminRole.PRIMARY) {
           return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
         }
       }
 
-      // Welfare management APIs - Admin and above
+      // Welfare management APIs - Admin and PRIMARY
       if (pathname.startsWith("/api/welfare-management")) {
         if (token.userType !== UserType.ADMIN || 
-            ![AdminRole.ADMIN, AdminRole.SUPER_ADMIN].includes(token.role as AdminRole)) {
+            ![AdminRole.ADMIN, AdminRole.PRIMARY].includes(token.role as AdminRole)) {
           return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
         }
       }
 
-      // User welfare claims APIs - User or Admin
+      // User welfare claims APIs - User or Admin/Manager
       if (pathname.startsWith("/api/claims")) {
         if (token.userType === UserType.USER) {
           // Users can only access their own claims
           return NextResponse.next();
         } else if (token.userType === UserType.ADMIN && 
-                   [AdminRole.ADMIN, AdminRole.SUPER_ADMIN].includes(token.role as AdminRole)) {
-          // Admins can access all claims
+                   [AdminRole.ADMIN, AdminRole.MANAGER, AdminRole.PRIMARY].includes(token.role as AdminRole)) {
+          // Admins, Managers, and PRIMARY can access claims
           return NextResponse.next();
         } else {
           return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });

@@ -17,8 +17,10 @@ async function main() {
       email: "superadmin@welfare.com",
       password: hashedPassword,
       name: "Super Administrator",
-      role: "SUPER_ADMIN",
+      role: "PRIMARY",
       isActive: true,
+      isFirstLogin: false,
+      mustChangePassword: false,
     },
   });
 
@@ -37,10 +39,32 @@ async function main() {
       name: "Administrator",
       role: "ADMIN",
       isActive: true,
+      isFirstLogin: false,
+      mustChangePassword: false,
     },
   });
 
   console.log("✅ Created admin:", admin.username);
+
+  // Create default manager
+  const managerPassword = await bcrypt.hash("manager123", 12);
+  
+  const manager = await prisma.admin.upsert({
+    where: { username: "manager" },
+    update: {},
+    create: {
+      username: "manager",
+      email: "manager@welfare.com",
+      password: managerPassword,
+      name: "Manager",
+      role: "MANAGER",
+      isActive: true,
+      isFirstLogin: false,
+      mustChangePassword: false,
+    },
+  });
+
+  console.log("✅ Created manager:", manager.username);
 
   // Create sample welfare programs
   const medicalWelfare = await prisma.welfare.upsert({
@@ -86,6 +110,8 @@ async function main() {
       phone: "+1234567890",
       password: userPassword,
       isActive: true,
+      isFirstLogin: false,
+      mustChangePassword: false,
     },
   });
 
@@ -101,6 +127,8 @@ async function main() {
       phone: "+1234567891",
       password: userPassword,
       isActive: true,
+      isFirstLogin: false,
+      mustChangePassword: false,
     },
   });
 

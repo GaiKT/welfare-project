@@ -1,7 +1,7 @@
 export enum AdminRole {
-  SUPER_ADMIN = "SUPER_ADMIN",
+  PRIMARY = "PRIMARY",
   ADMIN = "ADMIN",
-  MODERATOR = "MODERATOR"
+  MANAGER = "MANAGER"
 }
 
 export enum UserType {
@@ -11,9 +11,20 @@ export enum UserType {
 
 export enum ClaimStatus {
   PENDING = "PENDING",
-  APPROVED = "APPROVED",
+  IN_REVIEW = "IN_REVIEW",
+  ADMIN_APPROVED = "ADMIN_APPROVED",
+  MANAGER_APPROVED = "MANAGER_APPROVED",
   REJECTED = "REJECTED",
   COMPLETED = "COMPLETED"
+}
+
+export enum NotificationType {
+  CLAIM_SUBMITTED = "CLAIM_SUBMITTED",
+  CLAIM_APPROVED = "CLAIM_APPROVED",
+  CLAIM_REJECTED = "CLAIM_REJECTED",
+  CLAIM_COMMENT = "CLAIM_COMMENT",
+  CLAIM_COMPLETED = "CLAIM_COMPLETED",
+  SYSTEM = "SYSTEM"
 }
 
 // Extended user types for NextAuth
@@ -28,10 +39,15 @@ export interface AuthAdmin extends AuthUser {
   username: string;
   role: AdminRole;
   image?: string | null;
+  isFirstLogin?: boolean;
+  mustChangePassword?: boolean;
+  signatureUrl?: string | null;
 }
 
 export interface AuthRegularUser extends AuthUser {
   identity: string;
   firstName: string;
   lastName: string;
+  isFirstLogin?: boolean;
+  mustChangePassword?: boolean;
 }

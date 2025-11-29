@@ -13,7 +13,7 @@ export async function GET(
     const welfare = await prisma.welfare.findUnique({
       where: { id },
       include: {
-        usages: {
+        claims: {
           include: {
             user: {
               select: {
@@ -29,7 +29,7 @@ export async function GET(
         },
         _count: {
           select: {
-            usages: true,
+            claims: true,
           },
         },
       },
@@ -131,7 +131,7 @@ export async function DELETE(
     const welfare = await prisma.welfare.findUnique({
       where: { id },
       include: {
-        usages: true,
+        claims: true,
       },
     });
 
@@ -143,7 +143,7 @@ export async function DELETE(
     }
 
     // Check if there are existing claims
-    if (welfare.usages.length > 0) {
+    if (welfare.claims.length > 0) {
       return NextResponse.json(
         { 
           error: "Cannot delete welfare program with existing claims. Please resolve all claims first." 

@@ -21,12 +21,12 @@ export default function UserInfo({ showDetails = true, className = "" }: UserInf
   const getRoleDisplay = () => {
     if (user.userType === UserType.ADMIN) {
       switch (user.role) {
-        case AdminRole.SUPER_ADMIN:
-          return "Super Administrator";
+        case AdminRole.PRIMARY:
+          return "Primary Administrator";
+        case AdminRole.MANAGER:
+          return "Manager";
         case AdminRole.ADMIN:
           return "Administrator";
-        case AdminRole.MODERATOR:
-          return "Moderator";
         default:
           return "Admin";
       }

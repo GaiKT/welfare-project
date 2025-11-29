@@ -7,18 +7,19 @@ import { AdminRole } from "@/types/auth";
 
 // GET /api/auth/admins/[id] - Get specific admin
 export async function GET(
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  segmentData: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const { id } = await params;
+    const { id } = await segmentData.params;
     
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Users can get their own info, Super Admins can get any admin info
-    if (session.user.id !== id && session.user.role !== AdminRole.SUPER_ADMIN) {
+    if (session.user.id !== id && session.user.role !== AdminRole.PRIMARY) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -66,14 +67,14 @@ export async function PUT(
 
     // Check permissions
     const isSelfUpdate = session.user.id === id;
-    const isSuperAdmin = session.user.role === AdminRole.SUPER_ADMIN;
+    const isPrimaryAdmin = session.user.role === AdminRole.PRIMARY;
 
-    if (!isSelfUpdate && !isSuperAdmin) {
+    if (!isSelfUpdate && !isPrimaryAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Only Super Admins can change role and isActive status
-    if (!isSuperAdmin && (role !== undefined || isActive !== undefined)) {
+    // Only PRIMARY Admins can change role and isActive status
+    if (!isPrimaryAdmin && (role !== undefined || isActive !== undefined)) {
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 
@@ -93,8 +94,8 @@ export async function PUT(
     if (email !== undefined) updateData.email = email;
     if (name !== undefined) updateData.name = name;
     
-    // Only Super Admins can update these fields
-    if (isSuperAdmin) {
+    // Only PRIMARY Admins can update these fields
+    if (isPrimaryAdmin) {
       if (role !== undefined) updateData.role = role;
       if (isActive !== undefined) updateData.isActive = isActive;
     }
@@ -161,14 +162,14 @@ export async function PUT(
 
 // DELETE /api/auth/admins/[id] - Delete admin (Super Admin only)
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  segmentData: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const { id } = await params;
+    const { id } = await segmentData.params;
     
-    if (!session || session.user.role !== AdminRole.SUPER_ADMIN) {
+    if (!session || session.user.role !== AdminRole.PRIMARY) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
