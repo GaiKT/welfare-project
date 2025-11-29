@@ -47,6 +47,20 @@ export default withAuth(
       }
     }
 
+    // Account settings routes - require authentication (any user type)
+    if (pathname.startsWith("/account")) {
+      if (!token) {
+        return NextResponse.redirect(new URL("/signin", req.url));
+      }
+    }
+
+    // Profile routes - require authentication (any user type)
+    if (pathname.startsWith("/profile")) {
+      if (!token) {
+        return NextResponse.redirect(new URL("/signin", req.url));
+      }
+    }
+
     // API routes protection
     if (pathname.startsWith("/api/")) {
       // Public API routes
@@ -88,6 +102,12 @@ export default withAuth(
           return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
         }
       }
+
+      // Account settings APIs - Any authenticated user can access their own account
+      if (pathname.startsWith("/api/account")) {
+        // Already checked for token above, so just allow access
+        return NextResponse.next();
+      }
     }
 
     return NextResponse.next();
@@ -111,7 +131,9 @@ export default withAuth(
 
         // Require authentication for protected routes
         if (pathname.startsWith("/admin") || 
-            pathname.startsWith("/dashboard")) {
+            pathname.startsWith("/dashboard") ||
+            pathname.startsWith("/account") ||
+            pathname.startsWith("/profile")) {
           return !!token;
         }
 
@@ -126,10 +148,13 @@ export const config = {
     "/",
     "/admin/:path*",
     "/dashboard/:path*",
+    "/account/:path*",
+    "/profile/:path*",
     "/api/admin/:path*",
     "/api/welfare-management/:path*",
     "/api/claims/:path*",
     "/api/users-management/:path*",
-    "/api/reports/:path*"
+    "/api/reports/:path*",
+    "/api/account/:path*"
   ],
 };

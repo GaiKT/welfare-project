@@ -104,7 +104,7 @@ export default function UserMetaCard() {
 
                   <div className="col-span-2 lg:col-span-1">
                     <Label>เบอร์โทรศัพท์</Label>
-                    <Input type="text" defaultValue="+09 363 398 46" />
+                    <Input type="text" defaultValue="" />
                   </div>
 
                 </div>

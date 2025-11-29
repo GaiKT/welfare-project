@@ -1,5 +1,5 @@
 "use client";
-import React, { use } from "react";
+import React from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";

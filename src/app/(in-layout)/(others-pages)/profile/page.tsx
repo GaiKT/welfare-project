@@ -1,26 +1,43 @@
-import UserAddressCard from "@/components/user-profile/UserAddressCard";
+"use client";
 import UserInfoCard from "@/components/user-profile/UserInfoCard";
 import UserMetaCard from "@/components/user-profile/UserMetaCard";
-import { Metadata } from "next";
+import PasswordResetCard from "@/components/user-profile/PasswordResetCard";
 import React from "react";
-
-export const metadata: Metadata = {
-  title: "Next.js Profile | TailAdmin - Next.js Dashboard Template",
-  description:
-    "This is Next.js Profile page for TailAdmin - Next.js Tailwind CSS Admin Dashboard Template",
-};
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function Profile() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    router.push("/signin");
+    return null;
+  }
+
   return (
     <div>
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-        <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">
-          ข้อมูลโปรไฟล์
-        </h3>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            โปรไฟล์ผู้ใช้
+          </h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            จัดการข้อมูลส่วนตัวและการตั้งค่าบัญชีของคุณ
+          </p>
+        </div>
         <div className="space-y-6">
           <UserMetaCard />
           <UserInfoCard />
-          {/* <UserAddressCard /> */}
+          <PasswordResetCard />
         </div>
       </div>
     </div>

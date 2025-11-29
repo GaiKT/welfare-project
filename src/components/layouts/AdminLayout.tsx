@@ -2,11 +2,6 @@
 
 import { UserType } from "@/types/auth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import RoleBasedNavigation from "@/components/navigation/RoleBasedNavigation";
-import UserInfo from "@/components/user/UserInfo";
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
 
 interface AdminLayoutProps {
   children: React.ReactNode;

@@ -78,7 +78,7 @@ export function createErrorResponse(message: string, status: number) {
 /**
  * Auth wrapper for API routes
  */
-export function withAuth<T extends any[]>(
+export function withAuth<T extends unknown[]>(
   handler: (...args: T) => Promise<Response>,
   options?: {
     requiredRole?: AdminRole;

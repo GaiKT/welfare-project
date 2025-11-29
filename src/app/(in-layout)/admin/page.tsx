@@ -1,5 +1,4 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
-import type { Metadata } from "next";
 import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
 import React from "react";
 import MonthlyTarget from "@/components/ecommerce/MonthlyTarget";

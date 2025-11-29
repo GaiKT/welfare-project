@@ -7,7 +7,6 @@ import { AdminRole } from "@/types/auth";
 
 // GET /api/auth/admins/[id] - Get specific admin
 export async function GET(
-  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
