@@ -143,7 +143,7 @@ export default function MarryPage() {
                 <div className="flex justify-center">
                     <button
                         type="submit"
-                        className="rounded-full bg-black px-8 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-900"
+                        className="rounded-full bg-black px-8 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600"
                     >
                         ยื่นขอรับสวัสดิการ
                     </button>
