@@ -8,7 +8,6 @@ import { useSidebar } from "../context/SidebarContext";
 import { UserType } from "@/types/auth";
 import {
   BoxCubeIcon,
-  CalenderIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
@@ -50,7 +49,7 @@ const navItems: NavItem[] = [
   },
   {
     icon: <ListIcon />,
-    name: "อนุมัติคำร้อง (Admin)",
+    name: "อนุมัติคำร้องผู้ดูแลระบบ",
     subItems: [
       { name: "รอตรวจสอบ", path: "/claims-admin", pro: false, roles: [UserType.ADMIN] },
     ],
@@ -58,7 +57,7 @@ const navItems: NavItem[] = [
   },
   {
     icon: <ListIcon />,
-    name: "อนุมัติคำร้อง (Manager)",
+    name: "อนุมัติคำร้องผู้จัดการ",
     subItems: [
       { name: "รออนุมัติขั้นสุดท้าย", path: "/manager-approval", pro: false, roles: [UserType.ADMIN] },
     ],
@@ -69,7 +68,6 @@ const navItems: NavItem[] = [
     name: "การจัดการสวัสดิการ",
     subItems: [
       { name: "เพิ่มสวัสดิการ", path: "/welfare", pro: false, roles: [UserType.ADMIN] }, // Admin only
-      { name: "แก้ไขสวัสดิการ", path: "/welfare/create", pro: false, roles: [UserType.ADMIN] }, // Admin only
     ],
     roles: [UserType.ADMIN], // Admin only
   },
