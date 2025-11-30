@@ -26,7 +26,7 @@ export default function MarryPage() {
                         <div className="space-y-4 text-sm">
                             {/* ธนาคาร */}
                             <div>
-                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><Landmark />
+                                <label className="mb-1 font-medium text-gray-700 flex items-center gap-1"><Landmark />
                                     ธนาคาร
                                 </label>
                                 <div className="relative">
@@ -66,7 +66,7 @@ export default function MarryPage() {
 
                             {/* เลขบัญชี */}
                             <div>
-                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><Receipt />
+                                <label className="mb-1 font-medium text-gray-700 flex items-center gap-1"><Receipt />
                                     เลขบัญชี
                                 </label>
                                 <input
@@ -78,7 +78,7 @@ export default function MarryPage() {
 
                             {/* ชื่อเจ้าของบัญชี */}
                             <div>
-                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><CircleUserRound />
+                                <label className="mb-1 font-medium text-gray-700 flex items-center gap-1"><CircleUserRound />
                                     ชื่อเจ้าของบัญชี
                                 </label>
                                 <input
@@ -90,7 +90,7 @@ export default function MarryPage() {
 
                             {/* หมายเลขโทรศัพท์ */}
                             <div>
-                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><PhoneCall />
+                                <label className="mb-1 font-medium text-gray-700 flex items-center gap-1"><PhoneCall />
                                     หมายเลขโทรศัพท์
                                 </label>
                                 <input

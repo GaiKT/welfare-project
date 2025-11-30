@@ -49,7 +49,7 @@ function SubmitClaimForm() {
 
   useEffect(() => {
     if (!welfareId) {
-      router.push("/dashboard/welfare");
+      router.push("/welfare");
       return;
     }
 
@@ -157,7 +157,7 @@ function SubmitClaimForm() {
 
       if (response.ok) {
         alert("ยื่นคำร้องสำเร็จ!");
-        router.push("/dashboard/claims");
+        router.push("/claims");
       } else {
         setError(data.error || "เกิดข้อผิดพลาดในการยื่นคำร้อง");
       }
@@ -186,7 +186,7 @@ function SubmitClaimForm() {
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400">{error || "ไม่พบข้อมูลสวัสดิการ"}</p>
           <Link
-            href="/dashboard/welfare"
+            href="/welfare"
             className="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline"
           >
             กลับไปหน้ารายการสวัสดิการ
@@ -201,7 +201,7 @@ function SubmitClaimForm() {
       {/* Header */}
       <div className="mb-8">
         <Link
-          href="/dashboard/welfare"
+          href="/welfare"
           className="text-blue-600 dark:text-blue-400 hover:underline mb-4 inline-block"
         >
           ← กลับ
@@ -371,7 +371,7 @@ function SubmitClaimForm() {
         {/* Submit Buttons */}
         <div className="flex justify-end space-x-4">
           <Link
-            href="/dashboard/welfare"
+            href="/welfare"
             className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             ยกเลิก

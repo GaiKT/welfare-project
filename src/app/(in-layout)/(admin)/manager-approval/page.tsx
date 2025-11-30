@@ -21,44 +21,39 @@ interface Claim {
   status: string;
   description: string;
   createdAt: string;
+  adminApprovedAt: string | null;
+  adminApprover: {
+    name: string;
+  } | null;
   _count: {
     documents: number;
   };
 }
 
-export default function AdminClaimsPage() {
+export default function ManagerApprovalPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [claims, setClaims] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"ALL" | "PENDING" | "IN_REVIEW">("ALL");
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/signin");
-    } else if (session?.user && !session.user.role) {
-      // User doesn't have AdminRole, redirect
+    } else if (session?.user?.role && session.user.role !== "MANAGER") {
       router.push("/unauthorized");
     }
   }, [status, session, router]);
 
   useEffect(() => {
-    if (session?.user?.role) {
-      // Only admins/managers have role property
+    if (session?.user?.role === "MANAGER") {
       fetchClaims();
     }
-  }, [session, filter]);
+  }, [session]);
 
   const fetchClaims = async () => {
     try {
       setLoading(true);
-      let url = "/api/claims/admin-pending";
-      
-      if (filter !== "ALL") {
-        url += `?status=${filter}`;
-      }
-
-      const response = await fetch(url);
+      const response = await fetch("/api/claims?status=ADMIN_APPROVED");
       if (response.ok) {
         const data = await response.json();
         setClaims(data.claims || []);
@@ -71,26 +66,9 @@ export default function AdminClaimsPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { text: string; className: string }> = {
-      PENDING: {
-        text: "รอตรวจสอบ",
-        className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-      },
-      IN_REVIEW: {
-        text: "กำลังตรวจสอบ",
-        className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      },
-    };
-
-    const config = statusConfig[status] || {
-      text: status,
-      className: "bg-gray-100 text-gray-800",
-    };
     return (
-      <span
-        className={`px-3 py-1 text-sm font-medium rounded-full ${config.className}`}
-      >
-        {config.text}
+      <span className="px-3 py-1 text-sm font-medium rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+        รออนุมัติขั้นสุดท้าย
       </span>
     );
   };
@@ -111,45 +89,11 @@ export default function AdminClaimsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          คำร้องรอตรวจสอบ
+          คำร้องรออนุมัติขั้นสุดท้าย
         </h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          จัดการคำร้องที่รอการอนุมัติจาก Admin
+          จัดการคำร้องที่ผ่านการอนุมัติจาก Admin แล้ว รอการอนุมัติจาก Manager
         </p>
-      </div>
-
-      {/* Filter Buttons */}
-      <div className="mb-6 flex flex-wrap gap-3">
-        <button
-          onClick={() => setFilter("ALL")}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === "ALL"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-          }`}
-        >
-          ทั้งหมด
-        </button>
-        <button
-          onClick={() => setFilter("PENDING")}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === "PENDING"
-              ? "bg-yellow-600 text-white"
-              : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-          }`}
-        >
-          รอตรวจสอบ
-        </button>
-        <button
-          onClick={() => setFilter("IN_REVIEW")}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === "IN_REVIEW"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-          }`}
-        >
-          กำลังตรวจสอบ
-        </button>
       </div>
 
       {/* Claims Table */}
@@ -166,6 +110,9 @@ export default function AdminClaimsPage() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   จำนวนเงิน
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Admin ผู้อนุมัติ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   สถานะ
@@ -226,6 +173,22 @@ export default function AdminClaimsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {claim.adminApprover?.name || "-"}
+                      </span>
+                      {claim.adminApprovedAt && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(claim.adminApprovedAt).toLocaleDateString("th-TH", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     {getStatusBadge(claim.status)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -245,8 +208,8 @@ export default function AdminClaimsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
-                      href={`/admin/claims/${claim.id}`}
-                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      href={`/manager-approval/${claim.id}`}
+                      className="inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
                     >
                       <svg
                         className="w-4 h-4 mr-1"
@@ -258,16 +221,10 @@ export default function AdminClaimsPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
                         />
                       </svg>
-                      ตรวจสอบ
+                      พิจารณา
                     </Link>
                   </td>
                 </tr>
@@ -293,11 +250,10 @@ export default function AdminClaimsPage() {
               />
             </svg>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
-              {filter === "ALL"
-                ? "ไม่มีคำร้องรอตรวจสอบ"
-                : `ไม่มีคำร้องสถานะ ${
-                    filter === "PENDING" ? "รอตรวจสอบ" : "กำลังตรวจสอบ"
-                  }`}
+              ไม่มีคำร้องรออนุมัติขั้นสุดท้าย
+            </p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-500">
+              คำร้องที่ผ่านการอนุมัติจาก Admin จะแสดงที่นี่
             </p>
           </div>
         )}
@@ -308,7 +264,7 @@ export default function AdminClaimsPage() {
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              จำนวนคำร้อง
+              คำร้องทั้งหมด
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
               {claims.length}
@@ -316,18 +272,18 @@ export default function AdminClaimsPage() {
           </div>
           <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              รอตรวจสอบ
+              จำนวนเงินรวม
             </div>
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">
-              {claims.filter((c) => c.status === "PENDING").length}
+            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+              {claims.reduce((sum, claim) => sum + claim.amount, 0).toLocaleString()} ฿
             </div>
           </div>
           <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              กำลังตรวจสอบ
+              รอดำเนินการ
             </div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-              {claims.filter((c) => c.status === "IN_REVIEW").length}
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">
+              {claims.filter((c) => c.status === "ADMIN_APPROVED").length}
             </div>
           </div>
         </div>

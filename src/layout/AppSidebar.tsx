@@ -36,8 +36,7 @@ const navItems: NavItem[] = [
     icon: <UserCircleIcon />,
     name: "สวัสดิการ",
     subItems: [
-      { name: "รายการสวัสดิการ", path: "/dashboard/welfare", pro: false, roles: [UserType.ADMIN, UserType.USER] },
-      { name: "ยื่นคำร้อง", path: "/dashboard/welfare/submit", pro: false, roles: [UserType.USER] },
+      { name: "รายการสวัสดิการ", path: "/welfare", pro: false, roles: [UserType.ADMIN, UserType.USER] },
     ],
     roles: [UserType.ADMIN, UserType.USER], // Both can access
   },
@@ -45,8 +44,7 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     name: "คำร้องของฉัน",
     subItems: [
-      { name: "รายการคำร้อง", path: "/dashboard/claims", pro: false, roles: [UserType.USER] },
-      { name: "ประวัติคำร้อง", path: "/dashboard/claims", pro: false, roles: [UserType.USER] },
+      { name: "รายการคำร้อง", path: "/claims", pro: false, roles: [UserType.USER] },
     ],
     roles: [UserType.USER],
   },
@@ -54,7 +52,7 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     name: "อนุมัติคำร้อง (Admin)",
     subItems: [
-      { name: "รอตรวจสอบ", path: "/admin/claims", pro: false, roles: [UserType.ADMIN] },
+      { name: "รอตรวจสอบ", path: "/claims-admin", pro: false, roles: [UserType.ADMIN] },
     ],
     roles: [UserType.ADMIN],
   },
@@ -62,7 +60,7 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     name: "อนุมัติคำร้อง (Manager)",
     subItems: [
-      { name: "รออนุมัติขั้นสุดท้าย", path: "/admin/manager-approval", pro: false, roles: [UserType.ADMIN] },
+      { name: "รออนุมัติขั้นสุดท้าย", path: "/manager-approval", pro: false, roles: [UserType.ADMIN] },
     ],
     roles: [UserType.ADMIN],
   },
@@ -70,8 +68,8 @@ const navItems: NavItem[] = [
     icon: <BoxCubeIcon />,
     name: "การจัดการสวัสดิการ",
     subItems: [
-      { name: "เพิ่มสวัสดิการ", path: "/admin/welfare", pro: false, roles: [UserType.ADMIN] }, // Admin only
-      { name: "แก้ไขสวัสดิการ", path: "/admin/welfare/create", pro: false, roles: [UserType.ADMIN] }, // Admin only
+      { name: "เพิ่มสวัสดิการ", path: "/welfare", pro: false, roles: [UserType.ADMIN] }, // Admin only
+      { name: "แก้ไขสวัสดิการ", path: "/welfare/create", pro: false, roles: [UserType.ADMIN] }, // Admin only
     ],
     roles: [UserType.ADMIN], // Admin only
   },
@@ -79,16 +77,10 @@ const navItems: NavItem[] = [
     icon: <UserCircleIcon />,
     name: "การจัดการผู้ใช้",
     subItems: [
-      { name: "ผู้ใช้ทั้งหมด", path: "/admin/users", pro: false, roles: [UserType.ADMIN] }, // Admin only
-      { name: "จัดการผู้ดูแลระบบ", path: "/admin/admins", pro: false, roles: [UserType.ADMIN] }, // Admin only
+      { name: "ผู้ใช้ทั้งหมด", path: "/users", pro: false, roles: [UserType.ADMIN] }, // Admin only
+      { name: "จัดการผู้ดูแลระบบ", path: "/admins", pro: false, roles: [UserType.ADMIN] }, // Admin only
     ],
     roles: [UserType.ADMIN], // Admin only
-  },
-  {
-    icon: <CalenderIcon />,
-    name: "ปฏิทิน",
-    path: "/calendar",
-    roles: [UserType.ADMIN, UserType.USER], // Both can access
   },
 ];
 
@@ -97,8 +89,8 @@ const othersItems: NavItem[] = [
     icon: <PieChartIcon />,
     name: "รายงาน",
     subItems: [
-      { name: "รายงานสวัสดิการ", path: "/admin/reports/welfare", pro: false, roles: [UserType.ADMIN] },
-      { name: "รายงานคำร้องขอรับสวัสดิการ", path: "/admin/reports/claims", pro: false, roles: [UserType.ADMIN] },
+      { name: "รายงานสวัสดิการ", path: "/reports/welfare", pro: false, roles: [UserType.ADMIN] },
+      { name: "รายงานคำร้องขอรับสวัสดิการ", path: "/reports/claims", pro: false, roles: [UserType.ADMIN] },
     ],
     roles: [UserType.ADMIN], // Admin only
   },
@@ -106,8 +98,8 @@ const othersItems: NavItem[] = [
     icon: <BoxCubeIcon />,
     name: "การตั้งค่าระบบ",
     subItems: [
-      { name: "ตั้งค่าทั่วไป", path: "/admin/settings", pro: false, roles: [UserType.ADMIN] },
-      { name: "ตรวจสอบ Activity Log", path: "/admin/audit-logs", pro: false, roles: [UserType.ADMIN] },
+      { name: "ตั้งค่าทั่วไป", path: "/settings", pro: false, roles: [UserType.ADMIN] },
+      { name: "ตรวจสอบ Activity Log", path: "/audit-logs", pro: false, roles: [UserType.ADMIN] },
     ],
     roles: [UserType.ADMIN], // Admin only
   },

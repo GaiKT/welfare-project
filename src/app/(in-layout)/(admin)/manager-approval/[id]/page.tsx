@@ -164,7 +164,7 @@ export default function ManagerApprovalDetailPage() {
       if (response.ok) {
         alert("อนุมัติคำร้องสำเร็จ");
         setCommentText("");
-        router.push("/admin/manager-approval");
+        router.push("/manager-approval");
       } else {
         const data = await response.json();
         alert(data.error || "เกิดข้อผิดพลาดในการอนุมัติ");
@@ -195,7 +195,7 @@ export default function ManagerApprovalDetailPage() {
         alert("ปฏิเสธคำร้องสำเร็จ");
         setShowRejectModal(false);
         setRejectionReason("");
-        router.push("/admin/manager-approval");
+        router.push("/manager-approval");
       } else {
         const data = await response.json();
         alert(data.error || "เกิดข้อผิดพลาดในการปฏิเสธ");
@@ -308,7 +308,7 @@ export default function ManagerApprovalDetailPage() {
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400">{error || "ไม่พบข้อมูลคำร้อง"}</p>
           <Link
-            href="/admin/manager-approval"
+            href="/manager-approval"
             className="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline"
           >
             กลับไปหน้ารายการคำร้อง
@@ -325,7 +325,7 @@ export default function ManagerApprovalDetailPage() {
       {/* Header */}
       <div className="mb-8">
         <Link
-          href="/admin/manager-approval"
+          href="/manager-approval"
           className="text-blue-600 dark:text-blue-400 hover:underline mb-4 inline-block"
         >
           ← กลับ

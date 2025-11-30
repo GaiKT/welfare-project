@@ -26,6 +26,8 @@ export async function GET() {
       },
     });
 
+    console.log("Fetched welfare programs:", welfarePrograms);
+
     return NextResponse.json({ welfarePrograms });
   } catch (error) {
     console.error("Error fetching welfare programs:", error);

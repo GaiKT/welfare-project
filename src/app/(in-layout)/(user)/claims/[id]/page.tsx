@@ -35,9 +35,6 @@ interface ClaimComment {
     firstName: string;
     lastName: string;
   };
-  admin?: {
-    name: string;
-  };
 }
 
 interface ClaimDetail {
@@ -52,8 +49,6 @@ interface ClaimDetail {
     firstName: string;
     lastName: string;
     title: string | null;
-    email: string | null;
-    phone: string | null;
   };
   amount: number;
   status: string;
@@ -76,7 +71,7 @@ interface ClaimDetail {
   rejectionReason: string | null;
 }
 
-export default function AdminClaimDetailPage() {
+export default function ClaimDetailPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
@@ -87,22 +82,15 @@ export default function AdminClaimDetailPage() {
   const [error, setError] = useState("");
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/signin");
-    } else if (session?.user && !session.user.role) {
-      // User doesn't have AdminRole, redirect
-      router.push("/unauthorized");
     }
-  }, [status, session, router]);
+  }, [status, router]);
 
   useEffect(() => {
-    if (session?.user?.role && claimId) {
-      // Only admins/managers have role property
+    if (session?.user && claimId) {
       fetchClaimDetail();
     }
   }, [session, claimId]);
@@ -139,7 +127,7 @@ export default function AdminClaimDetailPage() {
 
       if (response.ok) {
         setCommentText("");
-        fetchClaimDetail();
+        fetchClaimDetail(); // Refresh data
       } else {
         const data = await response.json();
         alert(data.error || "เกิดข้อผิดพลาดในการเพิ่มความคิดเห็น");
@@ -152,101 +140,17 @@ export default function AdminClaimDetailPage() {
     }
   };
 
-  const handleApprove = async () => {
-    if (!confirm("คุณต้องการอนุมัติคำร้องนี้ใช่หรือไม่?")) return;
-
-    try {
-      setProcessing(true);
-      const endpoint =
-        session?.user?.role === "MANAGER"
-          ? `/api/claims/${claimId}/manager-approve`
-          : `/api/claims/${claimId}/admin-approve`;
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comments: commentText || undefined }),
-      });
-
-      if (response.ok) {
-        alert("อนุมัติคำร้องสำเร็จ");
-        setCommentText("");
-        fetchClaimDetail();
-      } else {
-        const data = await response.json();
-        alert(data.error || "เกิดข้อผิดพลาดในการอนุมัติ");
-      }
-    } catch (error) {
-      console.error("Error approving claim:", error);
-      alert("เกิดข้อผิดพลาดในการอนุมัติ");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!rejectionReason.trim()) {
-      alert("กรุณาระบุเหตุผลในการปฏิเสธ");
-      return;
-    }
-
-    try {
-      setProcessing(true);
-      const response = await fetch(`/api/claims/${claimId}/reject`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: rejectionReason }),
-      });
-
-      if (response.ok) {
-        alert("ปฏิเสธคำร้องสำเร็จ");
-        setShowRejectModal(false);
-        setRejectionReason("");
-        fetchClaimDetail();
-      } else {
-        const data = await response.json();
-        alert(data.error || "เกิดข้อผิดพลาดในการปฏิเสธ");
-      }
-    } catch (error) {
-      console.error("Error rejecting claim:", error);
-      alert("เกิดข้อผิดพลาดในการปฏิเสธ");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { text: string; className: string }> = {
-      PENDING: {
-        text: "รอตรวจสอบ",
-        className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-      },
-      IN_REVIEW: {
-        text: "กำลังตรวจสอบ",
-        className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      },
-      ADMIN_APPROVED: {
-        text: "ผ่านการอนุมัติขั้นที่ 1",
-        className: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
-      },
-      MANAGER_APPROVED: {
-        text: "อนุมัติแล้ว",
-        className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      },
-      REJECTED: {
-        text: "ไม่อนุมัติ",
-        className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-      },
-      COMPLETED: {
-        text: "เสร็จสิ้น",
-        className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      },
+      PENDING: { text: "รอตรวจสอบ", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
+      IN_REVIEW: { text: "กำลังตรวจสอบ", className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
+      ADMIN_APPROVED: { text: "ผ่านการอนุมัติขั้นที่ 1", className: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200" },
+      MANAGER_APPROVED: { text: "อนุมัติแล้ว", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
+      REJECTED: { text: "ไม่อนุมัติ", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },
+      COMPLETED: { text: "เสร็จสิ้น", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" }
     };
 
-    const config = statusConfig[status] || {
-      text: status,
-      className: "bg-gray-100 text-gray-800",
-    };
+    const config = statusConfig[status] || { text: status, className: "bg-gray-100 text-gray-800" };
     return (
       <span className={`px-3 py-1 text-sm font-medium rounded-full ${config.className}`}>
         {config.text}
@@ -285,41 +189,15 @@ export default function AdminClaimDetailPage() {
     if (fileType.includes("image")) {
       return (
         <svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       );
     }
     return (
       <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-        />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
       </svg>
     );
-  };
-
-  const canApprove = () => {
-    if (!claim) return false;
-    if (session?.user?.role === "ADMIN") {
-      return claim.status === "PENDING" || claim.status === "IN_REVIEW";
-    }
-    if (session?.user?.role === "MANAGER") {
-      return claim.status === "ADMIN_APPROVED";
-    }
-    return false;
-  };
-
-  const canReject = () => {
-    if (!claim) return false;
-    return ["PENDING", "IN_REVIEW", "ADMIN_APPROVED"].includes(claim.status);
   };
 
   if (status === "loading" || loading) {
@@ -339,7 +217,7 @@ export default function AdminClaimDetailPage() {
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400">{error || "ไม่พบข้อมูลคำร้อง"}</p>
           <Link
-            href="/admin/claims"
+            href="/claims"
             className="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline"
           >
             กลับไปหน้ารายการคำร้อง
@@ -350,11 +228,11 @@ export default function AdminClaimDetailPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <Link
-          href="/admin/claims"
+          href="/claims"
           className="text-blue-600 dark:text-blue-400 hover:underline mb-4 inline-block"
         >
           ← กลับ
@@ -375,53 +253,6 @@ export default function AdminClaimDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* User Info */}
-          <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              ข้อมูลผู้ยื่นคำร้อง
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  ชื่อ-นามสกุล
-                </label>
-                <p className="text-lg text-gray-900 dark:text-white">
-                  {claim.user.firstName} {claim.user.lastName}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  รหัสพนักงาน
-                </label>
-                <p className="text-lg text-gray-900 dark:text-white">{claim.user.identity}</p>
-              </div>
-              {claim.user.title && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    ตำแหน่ง
-                  </label>
-                  <p className="text-lg text-gray-900 dark:text-white">{claim.user.title}</p>
-                </div>
-              )}
-              {claim.user.email && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    อีเมล
-                  </label>
-                  <p className="text-lg text-gray-900 dark:text-white">{claim.user.email}</p>
-                </div>
-              )}
-              {claim.user.phone && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    เบอร์โทร
-                  </label>
-                  <p className="text-lg text-gray-900 dark:text-white">{claim.user.phone}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Claim Info */}
           <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -433,11 +264,6 @@ export default function AdminClaimDetailPage() {
                   สวัสดิการ
                 </label>
                 <p className="text-lg text-gray-900 dark:text-white">{claim.welfare.name}</p>
-                {claim.welfare.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {claim.welfare.description}
-                  </p>
-                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -507,18 +333,8 @@ export default function AdminClaimDetailPage() {
                       {formatFileSize(doc.fileSize)}
                     </p>
                   </div>
-                  <svg
-                    className="w-5 h-5 text-gray-400 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                    />
+                  <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </a>
               ))}
@@ -532,23 +348,25 @@ export default function AdminClaimDetailPage() {
             </h2>
 
             {/* Comment Form */}
-            <form onSubmit={handleAddComment} className="mb-6">
-              <textarea
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="เพิ่มความคิดเห็น..."
-                disabled={submittingComment}
-              />
-              <button
-                type="submit"
-                disabled={submittingComment || !commentText.trim()}
-                className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
-              >
-                {submittingComment ? "กำลังส่ง..." : "ส่งความคิดเห็น"}
-              </button>
-            </form>
+            {["PENDING", "IN_REVIEW", "ADMIN_APPROVED"].includes(claim.status) && (
+              <form onSubmit={handleAddComment} className="mb-6">
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="เพิ่มความคิดเห็น..."
+                  disabled={submittingComment}
+                />
+                <button
+                  type="submit"
+                  disabled={submittingComment || !commentText.trim()}
+                  className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+                >
+                  {submittingComment ? "กำลังส่ง..." : "ส่งความคิดเห็น"}
+                </button>
+              </form>
+            )}
 
             {/* Comments List */}
             <div className="space-y-4">
@@ -565,7 +383,7 @@ export default function AdminClaimDetailPage() {
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
                       {comment.userType === "USER"
                         ? `${comment.user?.firstName || ""} ${comment.user?.lastName || ""}`.trim()
-                        : comment.admin?.name || "ผู้ดูแลระบบ"}
+                        : "ผู้ดูแลระบบ"}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {new Date(comment.createdAt).toLocaleString("th-TH")}
@@ -587,61 +405,6 @@ export default function AdminClaimDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Action Buttons */}
-          {(canApprove() || canReject()) && (
-            <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                การดำเนินการ
-              </h2>
-              <div className="space-y-3">
-                {canApprove() && (
-                  <button
-                    onClick={handleApprove}
-                    disabled={processing}
-                    className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors flex items-center justify-center"
-                  >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    {processing ? "กำลังดำเนินการ..." : "อนุมัติ"}
-                  </button>
-                )}
-                {canReject() && (
-                  <button
-                    onClick={() => setShowRejectModal(true)}
-                    disabled={processing}
-                    className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors flex items-center justify-center"
-                  >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                    ปฏิเสธ
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Timeline */}
           <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -653,11 +416,7 @@ export default function AdminClaimDetailPage() {
                 <div className="flex flex-col items-center mr-4">
                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-                        clipRule="evenodd"
-                      />
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
                     </svg>
                   </div>
                   {(claim.approvals.length > 0 || claim.status !== "PENDING") && (
@@ -678,32 +437,18 @@ export default function AdminClaimDetailPage() {
                   <div className="flex flex-col items-center mr-4">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        approval.status === "REJECTED" ? "bg-red-500" : "bg-green-500"
+                        approval.status === "REJECTED"
+                          ? "bg-red-500"
+                          : "bg-green-500"
                       }`}
                     >
                       {approval.status === "REJECTED" ? (
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                            clipRule="evenodd"
-                          />
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                         </svg>
                       ) : (
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       )}
                     </div>
@@ -713,8 +458,7 @@ export default function AdminClaimDetailPage() {
                   </div>
                   <div className="flex-1 pb-4">
                     <p className="font-medium text-gray-900 dark:text-white">
-                      {approval.status === "REJECTED" ? "ปฏิเสธ" : "อนุมัติ"} โดย{" "}
-                      {approval.approver.name}
+                      {approval.status === "REJECTED" ? "ปฏิเสธ" : "อนุมัติ"} โดย {approval.approver.name}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       {new Date(approval.approvedAt).toLocaleString("th-TH")}
@@ -768,46 +512,6 @@ export default function AdminClaimDetailPage() {
           )}
         </div>
       </div>
-
-      {/* Reject Modal */}
-      {showRejectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              ปฏิเสธคำร้อง
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              กรุณาระบุเหตุผลในการปฏิเสธคำร้องนี้
-            </p>
-            <textarea
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              rows={4}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
-              placeholder="เหตุผลในการปฏิเสธ..."
-            />
-            <div className="mt-4 flex gap-3">
-              <button
-                onClick={handleReject}
-                disabled={processing || !rejectionReason.trim()}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors"
-              >
-                {processing ? "กำลังดำเนินการ..." : "ยืนยันปฏิเสธ"}
-              </button>
-              <button
-                onClick={() => {
-                  setShowRejectModal(false);
-                  setRejectionReason("");
-                }}
-                disabled={processing}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white font-medium rounded-lg transition-colors"
-              >
-                ยกเลิก
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

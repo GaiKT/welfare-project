@@ -76,10 +76,10 @@ export default function MyClaimsPage() {
     );
   };
 
-  const getStatusCount = (status: string) => {
-    if (status === "ALL") return claims.length;
-    return claims.filter((c) => c.status === status).length;
-  };
+  // const getStatusCount = (status: string) => {
+  //   if (status === "ALL") return claims.length;
+  //   return claims.filter((c) => c.status === status).length;
+  // };
 
   if (status === "loading" || loading) {
     return (
@@ -159,7 +159,7 @@ export default function MyClaimsPage() {
           </p>
           <div className="mt-6">
             <Link
-              href="/dashboard/welfare"
+              href="/welfare"
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,7 +174,7 @@ export default function MyClaimsPage() {
           {claims.map((claim) => (
             <Link
               key={claim.id}
-              href={`/dashboard/claims/${claim.id}`}
+              href={`/claims/${claim.id}`}
               className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-start justify-between">

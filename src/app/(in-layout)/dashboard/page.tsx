@@ -128,7 +128,7 @@ export default function UserDashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Link
-          href="/dashboard/welfare"
+          href="/welfare"
           className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
         >
           <div className="flex items-center">
@@ -145,7 +145,7 @@ export default function UserDashboard() {
         </Link>
 
         <Link
-          href="/dashboard/claims"
+          href="/claims"
           className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
         >
           <div className="flex items-center">
@@ -162,7 +162,7 @@ export default function UserDashboard() {
         </Link>
 
         <Link
-          href="/dashboard/notifications"
+          href="/notifications"
           className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
         >
           <div className="flex items-center">
@@ -244,7 +244,7 @@ export default function UserDashboard() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">คำร้องล่าสุด</h2>
           <Link
-            href="/dashboard/claims"
+            href="/claims"
             className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
           >
             ดูทั้งหมด →
@@ -289,7 +289,7 @@ export default function UserDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <Link
-                        href={`/dashboard/claims/${claim.id}`}
+                        href={`/claims/${claim.id}`}
                         className="text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         ดูรายละเอียด
@@ -316,7 +316,7 @@ export default function UserDashboard() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">การแจ้งเตือนล่าสุด</h2>
             <Link
-              href="/dashboard/notifications"
+              href="/notifications"
               className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
             >
               ดูทั้งหมด →

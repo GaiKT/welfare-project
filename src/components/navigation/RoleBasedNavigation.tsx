@@ -17,36 +17,36 @@ const navigationItems: NavigationItem[] = [
   // Admin navigation
   {
     name: "Admin Dashboard",
-    href: "/admin",
+    href: "/dashboard-admin",
     requiredUserType: UserType.ADMIN,
   },
   {
     name: "Users Management",
-    href: "/admin/users-management",
+    href: "/users-management",
     requiredUserType: UserType.ADMIN,
     requiredRole: AdminRole.PRIMARY,
   },
   {
     name: "Admin Management",
-    href: "/admin/admin-management",
+    href: "/admin-management",
     requiredUserType: UserType.ADMIN,
     requiredRole: AdminRole.PRIMARY,
   },
   {
     name: "Welfare Management",
-    href: "/admin/welfare-management",
+    href: "/welfare-management",
     requiredUserType: UserType.ADMIN,
     requiredRole: AdminRole.ADMIN,
   },
   {
     name: "Claims Management",
-    href: "/admin/claims",
+    href: "/claims",
     requiredUserType: UserType.ADMIN,
     requiredRole: AdminRole.ADMIN,
   },
   {
     name: "Reports",
-    href: "/admin/reports",
+    href: "/reports",
     requiredUserType: UserType.ADMIN,
     requiredRole: AdminRole.ADMIN,
   },
@@ -59,17 +59,17 @@ const navigationItems: NavigationItem[] = [
   },
   {
     name: "Welfare Programs",
-    href: "/dashboard/welfare",
+    href: "/welfare",
     requiredUserType: UserType.USER,
   },
   {
     name: "My Claims",
-    href: "/dashboard/claims",
+    href: "/claims",
     requiredUserType: UserType.USER,
   },
   {
     name: "Profile",
-    href: "/dashboard/profile",
+    href: "/profile",
     requiredUserType: UserType.USER,
   },
 ];

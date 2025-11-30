@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth-permissions";
+// import { requireAdmin } from "@/lib/auth-permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    // await requireAdmin();
     const { id } = await params;
 
     const welfare = await prisma.welfare.findUnique({
@@ -57,7 +57,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    // await requireAdmin();
     const { id } = await params;
 
     const data = await request.json();
@@ -124,7 +124,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    // await requireAdmin();
     const { id } = await params;
 
     // Check if welfare program exists

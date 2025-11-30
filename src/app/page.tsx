@@ -22,7 +22,7 @@ export default function RootPage() {
 
     // Authenticated, redirect based on user type
     if (session.user.userType === UserType.ADMIN) {
-      router.replace("/admin");
+      router.replace("/dashboard");
     } else if (session.user.userType === UserType.USER) {
       router.replace("/dashboard");
     } else {

@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
+    console.log("Received claim submission:", formData);
     const welfareId = formData.get("welfareId") as string;
     const amount = parseFloat(formData.get("amount") as string);
     const description = formData.get("description") as string;
@@ -148,31 +149,31 @@ export async function POST(request: NextRequest) {
     });
 
     // Create notification for admins (we'll notify all ADMINs and PRIMARY)
-    const admins = await prisma.admin.findMany({
-      where: {
-        role: {
-          in: ["ADMIN", "PRIMARY"],
-        },
-        isActive: true,
-      },
-      select: {
-        id: true,
-      },
-    });
+    // const admins = await prisma.admin.findMany({
+    //   where: {
+    //     role: {
+    //       in: ["ADMIN", "PRIMARY"],
+    //     },
+    //     isActive: true,
+    //   },
+    //   select: {
+    //     id: true,
+    //   },
+    // });
 
-    await Promise.all(
-      admins.map((admin) =>
-        prisma.notification.create({
-          data: {
-            userId: admin.id,
-            type: "CLAIM_SUBMITTED",
-            title: "มีคำร้องใหม่รอการตรวจสอบ",
-            message: `${session.user.name} ยื่นคำร้อง ${claim.welfare.name} จำนวน ${claim.amount} บาท`,
-            relatedClaimId: claim.id,
-          },
-        })
-      )
-    );
+    // await Promise.all(
+    //   admins.map((admin) =>
+    //     prisma.notification.create({
+    //       data: {
+    //         userId: admin.id,
+    //         type: "CLAIM_SUBMITTED",
+    //         title: "มีคำร้องใหม่รอการตรวจสอบ",
+    //         message: `${session.user.name} ยื่นคำร้อง ${claim.welfare.name} จำนวน ${claim.amount} บาท`,
+    //         relatedClaimId: claim.id,
+    //       },
+    //     })
+    //   )
+    // );
 
     return NextResponse.json({
       success: true,

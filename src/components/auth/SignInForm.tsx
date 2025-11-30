@@ -38,7 +38,7 @@ export default function SignInForm() {
       } else if (result?.ok) {
         // Redirect based on user type
         if (loginType === "admin") {
-          router.push("/admin");
+          router.push("/dashboard-admin");
         } else {
           router.push("/dashboard");
         }
