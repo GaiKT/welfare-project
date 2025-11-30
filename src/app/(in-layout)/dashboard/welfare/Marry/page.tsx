@@ -1,17 +1,4 @@
-import {
-  BoxCubeIcon,
-  CalenderIcon,
-  ChevronDownIcon,
-  GridIcon,
-  HorizontaLDots,
-  ListIcon,
-  PieChartIcon,
-  PageIcon,
-  DollarLineIcon,
-  DocsIcon,
-} from "../../../../../icons/index";
-
-import { File } from 'lucide-react';
+import { Landmark , File , Receipt , CircleUserRound , PhoneCall , CloudUpload } from 'lucide-react';
 
 export default function MarryPage() {
     return (
@@ -29,6 +16,7 @@ export default function MarryPage() {
                 <div className="max-w-5xl mx-auto space-y-6 mt-5">
                 {/* การ์ดซ้าย–ขวา */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                     {/* การ์ดซ้าย : ข้อมูลบัญชี */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                         <h2 className="mb-5 text-xl font-semibold text-gray-900">
@@ -38,7 +26,7 @@ export default function MarryPage() {
                         <div className="space-y-4 text-sm">
                             {/* ธนาคาร */}
                             <div>
-                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><DollarLineIcon />
+                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><Landmark />
                                     ธนาคาร
                                 </label>
                                 <div className="relative">
@@ -78,7 +66,7 @@ export default function MarryPage() {
 
                             {/* เลขบัญชี */}
                             <div>
-                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><PageIcon />
+                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><Receipt />
                                     เลขบัญชี
                                 </label>
                                 <input
@@ -90,7 +78,7 @@ export default function MarryPage() {
 
                             {/* ชื่อเจ้าของบัญชี */}
                             <div>
-                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><File />
+                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><CircleUserRound />
                                     ชื่อเจ้าของบัญชี
                                 </label>
                                 <input
@@ -102,7 +90,7 @@ export default function MarryPage() {
 
                             {/* หมายเลขโทรศัพท์ */}
                             <div>
-                                <label className="mb-1 block font-medium text-gray-700">
+                                <label className="mb-1 block font-medium text-gray-700 flex items-center gap-1"><PhoneCall />
                                     หมายเลขโทรศัพท์
                                 </label>
                                 <input
@@ -134,7 +122,7 @@ export default function MarryPage() {
 
                                         {/* ช่องแสดงชื่อไฟล์ */}
                                         <div className="flex h-10 flex-1 items-center gap-2 rounded-xl border border-gray-300 bg-gray-50 px-3 text-xs text-gray-500">
-                                            <span className="text-lg"><DocsIcon /></span>
+                                            <span className="text-lg"></span><CloudUpload />
                                             <span>แนบไฟล์</span>
                                         </div>
 
