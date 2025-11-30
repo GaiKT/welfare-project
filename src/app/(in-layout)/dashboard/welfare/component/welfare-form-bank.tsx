@@ -1,28 +1,36 @@
 "use client";
 
-import { Landmark, Receipt, CircleUserRound, PhoneCall, CloudUpload } from "lucide-react";
+import { useState } from "react";
+import { Landmark, Receipt, CircleUserRound, PhoneCall, CloudUpload  } from "lucide-react";
 
-// 1) Array ธนาคารทั้งหมด
-const BANK_LIST = [
-  "ธนาคารกรุงเทพ (BBL)",
-  "ธนาคารกสิกรไทย (KBank)",
-  "ธนาคารกรุงไทย (KTB)",
-  "ธนาคารไทยพาณิชย์ (SCB)",
-  "ธนาคารกรุงศรีอยุธยา (BAY)",
-  "ธนาคารทหารไทยธนชาต (TTB)",
-  "ธนาคารออมสิน (GSB)",
-  "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (BAAC)",
-  "ธนาคารอาคารสงเคราะห์ (GHB)",
-  "ธนาคารซีไอเอ็มบีไทย (CIMB)",
-  "ธนาคารยูโอบี (UOB)",
-  "ธนาคารสแตนดาร์ดชาร์เตอร์ด (SCBT)",
-  "ธนาคารซิตี้แบงก์ ประเทศไทย (Citibank Thailand)",
-  "ธนาคารไอซีบีซี (ICBC Thai)",
-  "ธนาคารทิสโก้ (TISCO)",
-  "ธนาคารเกียรตินาคินภัทร (KKP)",
+// ธนาคารทั้งหมดพร้อมไอคอน
+export const BANK_LIST = [
+  { value: "uob", label: "ธนาคารยูโอบี (UOB)", icon: "/images/icons/bank/UOB.png" },
+  { value: "baac", label: "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (BAAC)", icon: "/images/icons/bank/BAAC.png" },
+  { value: "bay", label: "ธนาคารกรุงศรีอยุธยา (BAY)", icon: "/images/icons/bank/BAY.png" },
+  { value: "bbl", label: "ธนาคารกรุงเทพ (BBL)", icon: "/images/icons/bank/BBL.png" },
+  { value: "cimb", label: "ธนาคารซีไอเอ็มบีไทย (CIMB)", icon: "/images/icons/bank/CIMB.png" },
+  { value: "citi", label: "ธนาคารซิตี้แบงก์ (CITI)", icon: "/images/icons/bank/CITI.png" },
+  { value: "ghb", label: "ธนาคารอาคารสงเคราะห์ (GHB)", icon: "/images/icons/bank/GHB.png" },
+  { value: "gsb", label: "ธนาคารออมสิน (GSB)", icon: "/images/icons/bank/GSB.png" },
+  { value: "hsbc", label: "ธนาคารเอชเอสบีซี (HSBC)", icon: "/images/icons/bank/HSBC.png" },
+  { value: "ibank", label: "ธนาคารอิสลามแห่งประเทศไทย (IBANK)", icon: "/images/icons/bank/IBANK.png" },
+  { value: "icbc", label: "ธนาคารไอซีบีซี (ICBC)", icon: "/images/icons/bank/ICBC.png" },
+  { value: "kbank", label: "ธนาคารกสิกรไทย (KBANK)", icon: "/images/icons/bank/KBANK.png" },
+  { value: "kkp", label: "ธนาคารเกียรตินาคินภัทร (KKP)", icon: "/images/icons/bank/KKP.png" },
+  { value: "ktb", label: "ธนาคารกรุงไทย (KTB)", icon: "/images/icons/bank/KTB.png" },
+  { value: "lhb", label: "ธนาคารแลนด์แอนด์เฮาส์ (LHB)", icon: "/images/icons/bank/LHB.png" },
+  { value: "scb", label: "ธนาคารไทยพาณิชย์ (SCB)", icon: "/images/icons/bank/SCB.png" },
+  { value: "tcrb", label: "ธนาคารไทยเครดิต (TCRB)", icon: "/images/icons/bank/TCRB.png" },
+  { value: "tisco", label: "ธนาคารทิสโก้ (TISCO)", icon: "/images/icons/bank/TISCO.png" },
+  { value: "ttb", label: "ธนาคารทหารไทยธนชาต (TTB)", icon: "/images/icons/bank/TTB.png" },
 ];
 
 export function WelfareFormLeft() {
+  const [selectedBank, setSelectedBank] = useState("");
+
+  const bank = BANK_LIST.find((b) => b.value === selectedBank);
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <h2 className="mb-5 text-xl font-semibold text-gray-900">
@@ -31,26 +39,38 @@ export function WelfareFormLeft() {
 
       <div className="space-y-4 text-sm">
 
-        {/* ธนาคาร */}
+        {/* ================== Dropdown ธนาคาร ================== */}
         <div>
           <label className="mb-1 flex items-center gap-1 font-medium text-gray-700">
             <Landmark className="h-4 w-4" />
             ธนาคาร
           </label>
 
+          {/* แสดงโลโก้ธนาคารเมื่อเลือก */}
+          {bank && (
+            <div className="mb-2 flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 shadow-sm border border-gray-200">
+              <img
+                src={bank.icon}
+                alt={bank.label}
+                className="h-6 w-6 rounded-full object-contain"
+              />
+              <span className="text-sm text-gray-700">{bank.label}</span>
+            </div>
+          )}
+
           <div className="relative">
             <select
               className="w-full appearance-none rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 pr-9 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              defaultValue=""
+              value={selectedBank}
+              onChange={(e) => setSelectedBank(e.target.value)}
             >
               <option value="" disabled>
                 กรุณาเลือก
               </option>
 
-              {/* map ธนาคารทั้งหมด */}
-              {BANK_LIST.map((bank) => (
-                <option key={bank} value={bank}>
-                  {bank}
+              {BANK_LIST.map((b) => (
+                <option key={b.value} value={b.value}>
+                  {b.label}
                 </option>
               ))}
             </select>
@@ -61,7 +81,7 @@ export function WelfareFormLeft() {
           </div>
         </div>
 
-        {/* เลขบัญชี */}
+        {/* ================== เลขบัญชี ================== */}
         <div>
           <label className="mb-1 flex items-center gap-1 font-medium text-gray-700">
             <Receipt className="h-4 w-4" />
@@ -74,7 +94,7 @@ export function WelfareFormLeft() {
           />
         </div>
 
-        {/* ชื่อเจ้าของบัญชี */}
+        {/* ================== ชื่อเจ้าของบัญชี ================== */}
         <div>
           <label className="mb-1 flex items-center gap-1 font-medium text-gray-700">
             <CircleUserRound className="h-4 w-4" />
@@ -87,7 +107,7 @@ export function WelfareFormLeft() {
           />
         </div>
 
-        {/* หมายเลขโทรศัพท์ */}
+        {/* ================== เบอร์โทร ================== */}
         <div>
           <label className="mb-1 flex items-center gap-1 font-medium text-gray-700">
             <PhoneCall className="h-4 w-4" />
@@ -99,11 +119,11 @@ export function WelfareFormLeft() {
             placeholder="กรุณาระบุ"
           />
         </div>
-
       </div>
     </div>
   );
 }
+
 
 export function WelfareFormRight ({ params }:{ params : string[]}) {
 
