@@ -18,11 +18,11 @@ interface BudgetData {
   usagePercent: number;
 }
 
-interface MonthlyTargetProps {
+interface BudgetUsageProps {
   data: BudgetData;
 }
 
-export default function MonthlyTarget({ data }: MonthlyTargetProps) {
+export default function BudgetUsage({ data }: BudgetUsageProps) {
   const series = [data.usagePercent];
   const options: ApexOptions = {
     colors: [data.usagePercent > 80 ? "#D92D20" : data.usagePercent > 60 ? "#F59E0B" : "#465FFF"],

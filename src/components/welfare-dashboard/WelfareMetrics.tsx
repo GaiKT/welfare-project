@@ -15,11 +15,11 @@ interface MetricsData {
   claimsGrowth: number;
 }
 
-interface EcommerceMetricsProps {
+interface WelfareMetricsProps {
   data: MetricsData;
 }
 
-export const EcommerceMetrics: React.FC<EcommerceMetricsProps> = ({ data }) => {
+export const WelfareMetrics: React.FC<WelfareMetricsProps> = ({ data }) => {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
       {/* <!-- Metric Item Start - Users --> */}

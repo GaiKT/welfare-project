@@ -11,11 +11,11 @@ const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-interface MonthlySalesChartProps {
+interface MonthlyClaimsChartProps {
   data: number[];
 }
 
-export default function MonthlySalesChart({ data }: MonthlySalesChartProps) {
+export default function MonthlyClaimsChart({ data }: MonthlyClaimsChartProps) {
   const options: ApexOptions = {
     colors: ["#465fff"],
     chart: {

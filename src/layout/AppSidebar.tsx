@@ -28,8 +28,8 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "ภาพรวม",
-    subItems: [{ name: "Dashboard", path: "/dashboard", pro: false }],
-    roles: [UserType.ADMIN, UserType.USER], // Both can access
+    subItems: [{ name: "Dashboard", path: "/dashboard-admin", pro: false }],
+    roles: [UserType.ADMIN],
   },
   {
     icon: <UserCircleIcon />,
