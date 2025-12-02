@@ -178,6 +178,13 @@ export const authOptions: NextAuthOptions = {
       if (trigger === "update" && session) {
         token.name = session.name;
         token.email = session.email;
+        // Allow updating password change status
+        if (session.user?.isFirstLogin !== undefined) {
+          token.isFirstLogin = session.user.isFirstLogin;
+        }
+        if (session.user?.mustChangePassword !== undefined) {
+          token.mustChangePassword = session.user.mustChangePassword;
+        }
       }
 
       return token;

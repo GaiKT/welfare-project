@@ -8,6 +8,25 @@ export default withAuth(
     // Use optional chaining because `nextauth` may be undefined
     const token = req.nextauth?.token;
 
+    // Check if user must change password (first login)
+    if (token?.mustChangePassword) {
+      // Allow access to reset-password page and auth APIs
+      if (pathname === "/reset-password" || 
+          pathname.startsWith("/api/auth/change-password") ||
+          pathname.startsWith("/api/auth/session")) {
+        return NextResponse.next();
+      }
+      // Redirect to reset-password page for all other routes
+      if (!pathname.startsWith("/api/")) {
+        return NextResponse.redirect(new URL("/reset-password", req.url));
+      }
+      // Block other API calls for users who must change password
+      return NextResponse.json(
+        { error: "Password change required" },
+        { status: 403 }
+      );
+    }
+
     // Root route - redirect to appropriate dashboard or signin
     if (pathname === "/") {
       if (!token) {
@@ -134,6 +153,11 @@ export default withAuth(
           return true;
         }
 
+        // Reset password page requires authentication
+        if (pathname === "/reset-password") {
+          return !!t;
+        }
+
         // Root route requires authentication
         if (pathname === "/") {
           return !!t;
@@ -160,6 +184,7 @@ export const config = {
     "/dashboard/:path*",
     "/account/:path*",
     "/profile/:path*",
+    "/reset-password",
     // API routes used in this project
     "/api/auth/:path*",
     "/api/claims/:path*",

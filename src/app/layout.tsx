@@ -1,9 +1,11 @@
 import { Outfit } from 'next/font/google';
 import './globals.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import SessionProvider from '@/components/providers/SessionProvider';
+import { ToastContainer } from 'react-toastify';
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -19,7 +21,22 @@ export default function RootLayout({
       <body className={`${outfit.className} dark:bg-gray-900`}>
         <SessionProvider>
           <ThemeProvider>
-            <SidebarProvider>{children}</SidebarProvider>
+            <SidebarProvider>
+              {children}
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="colored"
+                style={{ zIndex: 99999 }}
+              />
+            </SidebarProvider>
           </ThemeProvider>
         </SessionProvider>
       </body>

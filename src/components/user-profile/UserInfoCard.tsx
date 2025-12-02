@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
@@ -7,14 +7,102 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import { useSession } from "next-auth/react";
 
+interface UserProfileData {
+  // For Admin
+  name?: string;
+  username?: string;
+  // For User
+  firstName?: string;
+  lastName?: string;
+  title?: string;
+  identity?: string;
+  // Common
+  email?: string;
+  phone?: string;
+}
+
 export default function UserInfoCard() {
   const { isOpen, openModal, closeModal } = useModal();
-  const session = useSession(); // Assuming you have a useSession hook to get user session data
-  const handleSave = () => {
-    // Handle save logic here
-    console.log("Saving changes...");
-    closeModal();
+  const { data: session, update: updateSession } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error">("success");
+  const [profileData, setProfileData] = useState<UserProfileData>({});
+  const [formData, setFormData] = useState<UserProfileData>({});
+
+  const isAdmin = session?.user?.userType === "ADMIN";
+
+  // Fetch profile data on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch("/api/account/profile");
+        if (response.ok) {
+          const data = await response.json();
+          setProfileData(data.user || {});
+          setFormData(data.user || {});
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+    
+    if (session?.user) {
+      fetchProfile();
+    }
+  }, [session?.user]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/account/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage("บันทึกข้อมูลสำเร็จ!");
+        setMessageType("success");
+        setProfileData(data.user);
+        // Update session to reflect changes
+        await updateSession();
+        
+        setTimeout(() => {
+          closeModal();
+          setMessage("");
+        }, 1500);
+      } else {
+        setMessage(data.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        setMessageType("error");
+      }
+    } catch {
+      setMessage("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+      setMessageType("error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    closeModal();
+    setMessage("");
+    setFormData(profileData);
+  };
+
   return (
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -24,42 +112,85 @@ export default function UserInfoCard() {
           </h4>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                ชื่อ
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {session?.data?.user?.firstName || "ไม่ระบุ"}
-              </p>  
-            </div>
+            {isAdmin ? (
+              <>
+                <div>
+                  <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                    ชื่อผู้ใช้
+                  </p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {profileData.username || "ไม่ระบุ"}
+                  </p>
+                </div>
 
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                นามสกุล
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {session?.data?.user?.lastName || "ไม่ระบุ"}
-              </p>
-            </div>
+                <div>
+                  <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                    ชื่อ-นามสกุล
+                  </p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {profileData.name || "ไม่ระบุ"}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                    รหัสพนักงาน
+                  </p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {profileData.identity || "ไม่ระบุ"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                    คำนำหน้า
+                  </p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {profileData.title || "ไม่ระบุ"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                    ชื่อ
+                  </p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {profileData.firstName || "ไม่ระบุ"}
+                  </p>  
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                    นามสกุล
+                  </p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {profileData.lastName || "ไม่ระบุ"}
+                  </p>
+                </div>
+              </>
+            )}
 
             <div>
               <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                 ที่อยู่อีเมล
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {session?.data?.user?.email || "ไม่ระบุ"}
+                {profileData.email || "ไม่ระบุ"}
               </p>
             </div>
 
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                เบอร์โทรศัพท์
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {"ไม่ระบุ"}
-              </p>
-            </div>
-
+            {!isAdmin && (
+              <div>
+                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                  เบอร์โทรศัพท์
+                </p>
+                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                  {profileData.phone || "ไม่ระบุ"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -86,7 +217,7 @@ export default function UserInfoCard() {
         </button>
       </div>
 
-      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
+      <Modal isOpen={isOpen} onClose={handleCloseModal} className="max-w-[700px] m-4">
         <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
           <div className="px-2 pr-14">
             <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
@@ -96,43 +227,146 @@ export default function UserInfoCard() {
               อัปเดตข้อมูลของคุณเพื่อให้โปรไฟล์ของคุณทันสมัยอยู่เสมอ
             </p>
           </div>
+
+          {message && (
+            <div className={`mb-6 mx-2 p-4 rounded-lg ${
+              messageType === "success"
+                ? "bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                : "bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            }`}>
+              {message}
+            </div>
+          )}
+
           <form className="flex flex-col">
-            <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
-              <div className="mt-7">
+            <div className="custom-scrollbar max-h-[450px] overflow-y-auto px-2 pb-3">
+              <div className="mt-2">
                 <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
                   ข้อมูลส่วนตัว
                 </h5>
 
                 <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>ชื่อ</Label>
-                    <Input type="text" defaultValue="Musharof" />
-                  </div>
+                  {isAdmin ? (
+                    <>
+                      <div className="col-span-2 lg:col-span-1">
+                        <Label>ชื่อผู้ใช้</Label>
+                        <Input 
+                          type="text" 
+                          value={formData.username || ""} 
+                          disabled
+                          className="bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">ไม่สามารถเปลี่ยนแปลงได้</p>
+                      </div>
 
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>นามสกุล</Label>
-                    <Input type="text" defaultValue="Chowdhury" />
-                  </div>
+                      <div className="col-span-2 lg:col-span-1">
+                        <Label>ชื่อ-นามสกุล</Label>
+                        <Input 
+                          type="text" 
+                          name="name"
+                          value={formData.name || ""} 
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="col-span-2 lg:col-span-1">
+                        <Label>รหัสพนักงาน</Label>
+                        <Input 
+                          type="text" 
+                          value={formData.identity || ""} 
+                          disabled
+                          className="bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">ไม่สามารถเปลี่ยนแปลงได้</p>
+                      </div>
+
+                      <div className="col-span-2 lg:col-span-1">
+                        <Label>คำนำหน้า</Label>
+                        <Input 
+                          type="text" 
+                          name="title"
+                          value={formData.title || ""} 
+                          onChange={handleInputChange}
+                          placeholder="เช่น นาย, นาง, นางสาว"
+                        />
+                      </div>
+
+                      <div className="col-span-2 lg:col-span-1">
+                        <Label>ชื่อ</Label>
+                        <Input 
+                          type="text" 
+                          name="firstName"
+                          value={formData.firstName || ""} 
+                          onChange={handleInputChange}
+                        />
+                      </div>
+
+                      <div className="col-span-2 lg:col-span-1">
+                        <Label>นามสกุล</Label>
+                        <Input 
+                          type="text" 
+                          name="lastName"
+                          value={formData.lastName || ""} 
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </>
+                  )}
 
                   <div className="col-span-2 lg:col-span-1">
                     <Label>อีเมล</Label>
-                    <Input type="text" defaultValue="randomuser@pimjo.com" />
+                    <Input 
+                      type="email" 
+                      name="email"
+                      value={formData.email || ""} 
+                      onChange={handleInputChange}
+                    />
                   </div>
 
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>เบอร์โทรศัพท์</Label>
-                    <Input type="text" defaultValue="+09 363 398 46" />
-                  </div>
-
+                  {!isAdmin && (
+                    <div className="col-span-2 lg:col-span-1">
+                      <Label>เบอร์โทรศัพท์</Label>
+                      <Input 
+                        type="tel" 
+                        name="phone"
+                        value={formData.phone || ""} 
+                        onChange={handleInputChange}
+                        placeholder="เช่น 081-234-5678"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <Button size="sm" variant="outline" onClick={closeModal}>
-                ปิด
+              <Button size="sm" variant="outline" onClick={handleCloseModal} disabled={isLoading}>
+                ยกเลิก
               </Button>
-              <Button size="sm" onClick={handleSave}>
-                ยืนยันการแก้ไข
+              <Button size="sm" onClick={handleSave} disabled={isLoading}>
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    กำลังบันทึก...
+                  </div>
+                ) : (
+                  "ยืนยันการแก้ไข"
+                )}
               </Button>
             </div>
           </form>

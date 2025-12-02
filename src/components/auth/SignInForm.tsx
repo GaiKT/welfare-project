@@ -3,10 +3,11 @@ import Checkbox from "@/components/form/input/Checkbox";
 import Label from "@/components/form/Label";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "react-toastify";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,13 +16,55 @@ export default function SignInForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ identifier?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
+
+  // Show success message if password was just changed
+  useEffect(() => {
+    const message = searchParams.get("message");
+    if (message === "password-changed") {
+      setSuccessMessage("เปลี่ยนรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่");
+      toast.success("เปลี่ยนรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่");
+    } else if (message === "password-reset-success") {
+      setSuccessMessage("รีเซ็ตรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่");
+      toast.success("รีเซ็ตรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่");
+    }
+  }, [searchParams]);
+
+  // Check if user needs to change password after session is loaded
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.mustChangePassword) {
+      router.push("/reset-password");
+    }
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setFieldErrors({});
+    setSuccessMessage("");
+
+    // Client-side validation
+    const errors: { identifier?: string; password?: string } = {};
+    if (!identifier.trim()) {
+      errors.identifier = loginType === "admin" 
+        ? "กรุณากรอกชื่อผู้ใช้หรืออีเมล" 
+        : "กรุณากรอกรหัสสมาชิก";
+    }
+    if (!password) {
+      errors.password = "กรุณากรอกรหัสผ่าน";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const result = await signIn(
@@ -34,18 +77,45 @@ export default function SignInForm() {
       );
 
       if (result?.error) {
-        setError(result.error);
-      } else if (result?.ok) {
-        // Redirect based on user type
-        if (loginType === "admin") {
-          router.push("/dashboard-admin");
+        // Determine which field has error based on error message
+        if (result.error.toLowerCase().includes("password") || 
+            result.error.toLowerCase().includes("รหัสผ่าน")) {
+          setFieldErrors({ password: "รหัสผ่านไม่ถูกต้อง" });
+        } else if (result.error.toLowerCase().includes("credentials") || 
+                   result.error.toLowerCase().includes("invalid")) {
+          setFieldErrors({ 
+            identifier: loginType === "admin" 
+              ? "ชื่อผู้ใช้หรืออีเมลไม่ถูกต้อง" 
+              : "รหัสสมาชิกไม่ถูกต้อง",
+            password: "หรือรหัสผ่านไม่ถูกต้อง"
+          });
         } else {
-          router.push("/dashboard");
+          setError(result.error);
+        }
+        toast.error("เข้าสู่ระบบไม่สำเร็จ");
+        setIsLoading(false);
+      } else if (result?.ok) {
+        // Fetch session to check mustChangePassword
+        const sessionRes = await fetch("/api/auth/session");
+        const sessionData = await sessionRes.json();
+        
+        if (sessionData?.user?.mustChangePassword) {
+          // Redirect to reset password page
+          toast.info("กรุณาตั้งรหัสผ่านใหม่เพื่อความปลอดภัย");
+          router.push("/reset-password");
+        } else {
+          // Redirect based on user type
+          toast.success("เข้าสู่ระบบสำเร็จ!");
+          if (loginType === "admin") {
+            router.push("/dashboard-admin");
+          } else {
+            router.push("/dashboard");
+          }
         }
       }
     } catch {
       setError("An unexpected error occurred");
-    } finally {
+      toast.error("มีบางอย่างผิดพลาด กรุณาลองใหม่อีกครั้ง");
       setIsLoading(false);
     }
   };
@@ -103,6 +173,12 @@ export default function SignInForm() {
           <div>
             <form onSubmit={handleSubmit}>
               <div className="space-y-6">
+                {successMessage && (
+                  <div className="p-3 text-sm text-green-600 bg-green-100 rounded-md dark:bg-green-900/30 dark:text-green-400">
+                    {successMessage}
+                  </div>
+                )}
+                
                 {error && (
                   <div className="p-3 text-sm text-red-600 bg-red-100 rounded-md dark:bg-red-900/30 dark:text-red-400">
                     {error}
@@ -117,10 +193,25 @@ export default function SignInForm() {
                     placeholder={loginType === "admin" ? "admin@company.com" : "EMP001"}
                     type="text"
                     value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
+                    onChange={(e) => {
+                      setIdentifier(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, identifier: undefined }));
+                    }}
                     required
-                    className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700"
+                    className={`h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 bg-transparent text-gray-800 ${
+                      fieldErrors.identifier 
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" 
+                        : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700 dark:focus:border-brand-800"
+                    }`}
                   />
+                  {fieldErrors.identifier && (
+                    <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {fieldErrors.identifier}
+                    </p>
+                  )}
                 </div>
                 
                 <div>
@@ -132,9 +223,16 @@ export default function SignInForm() {
                       type={showPassword ? "text" : "password"}
                       placeholder="************"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                      }}
                       required
-                      className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700"
+                      className={`h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 bg-transparent text-gray-800 ${
+                        fieldErrors.password 
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" 
+                          : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/10 dark:border-gray-700 dark:focus:border-brand-800"
+                      }`}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -147,6 +245,14 @@ export default function SignInForm() {
                       )}
                     </span>
                   </div>
+                  {fieldErrors.password && (
+                    <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {fieldErrors.password}
+                    </p>
+                  )}
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -157,7 +263,7 @@ export default function SignInForm() {
                     </span>
                   </div>
                   <Link
-                    href="/auth/forgot-password"
+                    href="/forgot-password"
                     className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
                   >
                     ลืมรหัสผ่าน?
