@@ -12,6 +12,7 @@ import Badge from "@/components/ui/badge/Badge";
 import { Modal } from "@/components/ui/modal";
 import Button from "@/components/ui/button/Button";
 import Label from "@/components/form/Label";
+import { PageLoading } from "@/components/ui/loading";
 
 interface Welfare {
   id: string;
@@ -231,11 +232,7 @@ export default function WelfareManagement() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
-      </div>
-    );
+    return <PageLoading text="กำลังโหลดข้อมูล..." />;
   }
 
   if (error) {

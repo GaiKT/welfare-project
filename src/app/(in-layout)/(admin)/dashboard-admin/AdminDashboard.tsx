@@ -7,6 +7,7 @@ import MonthlyClaimsChart from "@/components/welfare-dashboard/MonthlyClaimsChar
 import ApprovalStatistics from "@/components/welfare-dashboard/ApprovalStatistics";
 import RecentClaims from "@/components/welfare-dashboard/RecentClaims";
 import WelfareSummary from "@/components/welfare-dashboard/WelfareSummary";
+import { PageLoading } from "@/components/ui/loading";
 
 interface DashboardData {
   fiscalYear: number;
@@ -78,11 +79,7 @@ export default function AdminDashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
-      </div>
-    );
+    return <PageLoading text="กำลังโหลดข้อมูล..." />;
   }
 
   if (error) {

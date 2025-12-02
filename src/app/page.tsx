@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { UserType } from "@/types/auth";
+import { PageLoading } from "@/components/ui/loading";
 
 export default function RootPage() {
   const { data: session, status } = useSession();
@@ -32,12 +33,5 @@ export default function RootPage() {
   }, [session, status, router]);
 
   // Show loading state while determining where to redirect
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
-      </div>
-    </div>
-  );
+  return <PageLoading text="กำลังโหลด..." fullScreen />;
 }

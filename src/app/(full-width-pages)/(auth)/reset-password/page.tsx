@@ -7,6 +7,7 @@ import Image from "next/image";
 import { EyeIcon, EyeCloseIcon } from "@/icons";
 import { UserType } from "@/types/auth";
 import { toast } from "react-toastify";
+import { Loading } from "@/components/ui/loading";
 
 export default function ResetPasswordPage() {
   const { data: session, status, update } = useSession();
@@ -136,7 +137,7 @@ export default function ResetPasswordPage() {
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+        <Loading size="lg" variant="spinner" text="กำลังโหลด..." />
       </div>
     );
   }

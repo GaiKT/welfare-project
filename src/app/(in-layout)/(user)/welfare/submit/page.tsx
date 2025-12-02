@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { PageLoading, InlineLoading } from "@/components/ui/loading";
 
 interface Welfare {
   id: string;
@@ -170,14 +171,7 @@ function SubmitClaimForm() {
   };
 
   if (status === "loading" || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">กำลังโหลด...</p>
-        </div>
-      </div>
-    );
+    return <PageLoading text="กำลังโหลด..." fullScreen />;
   }
 
   if (!welfare) {
@@ -383,7 +377,7 @@ function SubmitClaimForm() {
           >
             {submitting ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <InlineLoading size="sm" />
                 <span>กำลังยื่นคำร้อง...</span>
               </>
             ) : (

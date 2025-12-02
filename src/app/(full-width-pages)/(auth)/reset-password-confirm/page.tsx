@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { EyeIcon, EyeCloseIcon } from "@/icons";
+import { Loading } from "@/components/ui/loading";
 
 function ResetPasswordConfirmForm() {
   const router = useRouter();
@@ -137,8 +138,7 @@ function ResetPasswordConfirmForm() {
     return (
       <div className="flex flex-col flex-1 lg:w-1/2 w-full">
         <div className="flex flex-col justify-center items-center flex-1">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
-          <p className="mt-4 text-gray-500 dark:text-gray-400">กำลังตรวจสอบลิงก์...</p>
+          <Loading size="lg" variant="spinner" text="กำลังตรวจสอบลิงก์..." />
         </div>
       </div>
     );
@@ -341,7 +341,7 @@ export default function ResetPasswordConfirmPage() {
       fallback={
         <div className="flex flex-col flex-1 lg:w-1/2 w-full">
           <div className="flex flex-col justify-center items-center flex-1">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+            <Loading size="lg" variant="spinner" />
           </div>
         </div>
       }

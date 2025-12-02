@@ -13,6 +13,7 @@ import { Modal } from "@/components/ui/modal";
 import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
+import { PageLoading } from "@/components/ui/loading";
 
 const inputClassName = "h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white";
 
@@ -221,11 +222,7 @@ export default function UsersManagement() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
-      </div>
-    );
+    return <PageLoading text="กำลังโหลดข้อมูล..." />;
   }
 
   if (error) {
