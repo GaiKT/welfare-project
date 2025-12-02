@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSuperAdmin } from "@/lib/auth-permissions";
+import { requireAdmin } from "@/lib/auth-permissions";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireSuperAdmin();
+    await requireAdmin();
     const { id } = await params;
 
     const user = await prisma.user.findUnique({
@@ -62,7 +62,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireSuperAdmin();
+    await requireAdmin();
     const { id } = await params;
 
     const data = await request.json();
@@ -159,7 +159,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireSuperAdmin();
+    await requireAdmin();
     const { id } = await params;
 
     // Check if user exists

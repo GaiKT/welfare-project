@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireSuperAdmin } from "@/lib/auth-permissions";
+import { requireAdmin } from "@/lib/auth-permissions";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
   try {
-    await requireSuperAdmin();
+    await requireAdmin();
 
     const users = await prisma.user.findMany({
       select: {
@@ -43,7 +43,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireSuperAdmin();
+    await requireAdmin();
 
     const data = await request.json();
     const {

@@ -15,6 +15,7 @@ import {
   PieChartIcon,
   UserCircleIcon,
 } from "../icons/index";
+import { UserSquare } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -35,9 +36,9 @@ const navItems: NavItem[] = [
     icon: <UserCircleIcon />,
     name: "สวัสดิการ",
     subItems: [
-      { name: "รายการสวัสดิการ", path: "/welfare", pro: false, roles: [UserType.ADMIN, UserType.USER] },
+      { name: "รายการสวัสดิการ", path: "/welfare", pro: false, roles: [UserType.USER] },
     ],
-    roles: [UserType.ADMIN, UserType.USER], // Both can access
+    roles: [UserType.USER],
   },
   {
     icon: <ListIcon />,
@@ -59,15 +60,15 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     name: "อนุมัติคำร้องผู้จัดการ",
     subItems: [
-      { name: "รออนุมัติขั้นสุดท้าย", path: "/manager-approval", pro: false, roles: [UserType.ADMIN] },
+      { name: "รออนุมัติขั้นสุดท้าย", path: "/manager-approval", pro: false, roles: [UserType.MANAGER] },
     ],
-    roles: [UserType.ADMIN],
+    roles: [UserType.MANAGER],
   },
   {
     icon: <BoxCubeIcon />,
     name: "การจัดการสวัสดิการ",
     subItems: [
-      { name: "เพิ่มสวัสดิการ", path: "/welfare", pro: false, roles: [UserType.ADMIN] }, // Admin only
+      { name: "จัดการสวัสดิการ", path: "/welfare-management", pro: false, roles: [UserType.ADMIN] },
     ],
     roles: [UserType.ADMIN], // Admin only
   },
@@ -75,23 +76,23 @@ const navItems: NavItem[] = [
     icon: <UserCircleIcon />,
     name: "การจัดการผู้ใช้",
     subItems: [
-      { name: "ผู้ใช้ทั้งหมด", path: "/users", pro: false, roles: [UserType.ADMIN] }, // Admin only
-      { name: "จัดการผู้ดูแลระบบ", path: "/admins", pro: false, roles: [UserType.ADMIN] }, // Admin only
+      { name: "ผู้ใช้ทั้งหมด", path: "/users-management", pro: false, roles: [UserType.ADMIN] }, // Admin only
+      { name: "จัดการผู้ดูแลระบบ", path: "/admins-management", pro: false, roles: [UserType.MANAGER] }, // Primary only
     ],
-    roles: [UserType.ADMIN], // Admin only
+    roles: [UserType.MANAGER , UserType.ADMIN], // Admin only
   },
 ];
 
 const othersItems: NavItem[] = [
-  {
-    icon: <PieChartIcon />,
-    name: "รายงาน",
-    subItems: [
-      { name: "รายงานสวัสดิการ", path: "/reports/welfare", pro: false, roles: [UserType.ADMIN] },
-      { name: "รายงานคำร้องขอรับสวัสดิการ", path: "/reports/claims", pro: false, roles: [UserType.ADMIN] },
-    ],
-    roles: [UserType.ADMIN], // Admin only
-  },
+  // {
+  //   icon: <PieChartIcon />,
+  //   name: "รายงาน",
+  //   subItems: [
+  //     { name: "รายงานสวัสดิการ", path: "/reports/welfare", pro: false, roles: [UserType.ADMIN] },
+  //     { name: "รายงานคำร้องขอรับสวัสดิการ", path: "/reports/claims", pro: false, roles: [UserType.ADMIN] },
+  //   ],
+  //   roles: [UserType.ADMIN], // Admin only
+  // },
   {
     icon: <BoxCubeIcon />,
     name: "การตั้งค่าระบบ",
@@ -267,8 +268,17 @@ const AppSidebar: React.FC = () => {
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => path === pathname;
-   const isActive = useCallback((path: string) => path === pathname, [pathname]);
+  // Check if the current path matches the menu item path
+  // Uses endsWith to handle route groups like (admin), (user), etc.
+  const isActive = useCallback((path: string) => {
+    // Exact match
+    if (path === pathname) return true;
+    // Check if pathname ends with the path (handles route groups)
+    if (pathname.endsWith(path)) return true;
+    // Check if pathname includes the path for nested routes
+    if (path !== "/" && pathname.includes(path)) return true;
+    return false;
+  }, [pathname]);
 
   useEffect(() => {
     // Check if the current path matches any submenu item

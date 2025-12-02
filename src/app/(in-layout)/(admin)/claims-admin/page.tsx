@@ -118,6 +118,36 @@ export default function AdminClaimsPage() {
         </p>
       </div>
 
+      {/* Stats Summary */}
+      {claims.length > 0 && (
+        <div className="my-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              จำนวนคำร้อง
+            </div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              {claims.length}
+            </div>
+          </div>
+          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              รอตรวจสอบ
+            </div>
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">
+              {claims.filter((c) => c.status === "PENDING").length}
+            </div>
+          </div>
+          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              กำลังตรวจสอบ
+            </div>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+              {claims.filter((c) => c.status === "IN_REVIEW").length}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filter Buttons */}
       <div className="mb-6 flex flex-wrap gap-3">
         <button
@@ -302,36 +332,6 @@ export default function AdminClaimsPage() {
           </div>
         )}
       </div>
-
-      {/* Stats Summary */}
-      {claims.length > 0 && (
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              จำนวนคำร้อง
-            </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-              {claims.length}
-            </div>
-          </div>
-          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              รอตรวจสอบ
-            </div>
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">
-              {claims.filter((c) => c.status === "PENDING").length}
-            </div>
-          </div>
-          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              กำลังตรวจสอบ
-            </div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-              {claims.filter((c) => c.status === "IN_REVIEW").length}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
