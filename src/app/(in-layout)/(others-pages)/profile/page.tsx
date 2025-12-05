@@ -22,7 +22,7 @@ export default function Profile() {
 
   return (
     <div>
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white lg:p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             โปรไฟล์ผู้ใช้

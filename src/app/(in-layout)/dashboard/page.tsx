@@ -209,7 +209,7 @@ export default function UserDashboard() {
                 <div className="mt-3">
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-gray-600 dark:text-gray-400">ใช้ไป</span>
-                    <span className="font-medium">{quota.usagePercentage.toFixed(1)}%</span>
+                    <span className="font-medium dark:text-white">{quota.usagePercentage.toFixed(1)}%</span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
@@ -323,7 +323,7 @@ export default function UserDashboard() {
                 className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start">
-                  <div className={`flex-shrink-0 w-2 h-2 mt-2 rounded-full ${notif.isRead ? "bg-gray-300" : "bg-blue-500"}`}></div>
+                  <div className={`flex w-2 h-2 mt-2 rounded-full ${notif.isRead ? "bg-gray-300" : "bg-blue-500"}`}></div>
                   <div className="ml-3 flex-1">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{notif.title}</h3>
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{notif.message}</p>
