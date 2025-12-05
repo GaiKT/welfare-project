@@ -33,6 +33,12 @@ const navItems: NavItem[] = [
     roles: [UserType.ADMIN],
   },
   {
+    icon: <GridIcon />, 
+    name: "แดชบอร์ด",
+    path: "/dashboard",
+    roles: [UserType.USER]
+  },
+  {
     icon: <UserCircleIcon />,
     name: "สวัสดิการ",
     subItems: [

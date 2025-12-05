@@ -116,12 +116,12 @@ export default withAuth(
       }
 
       // Welfare management APIs - All admin roles can access
-      if (pathname.startsWith("/api/welfare-management")) {
-        if (token?.userType !== UserType.ADMIN || 
-            ![AdminRole.ADMIN, AdminRole.MANAGER, AdminRole.PRIMARY].includes(token.role as AdminRole)) {
-          return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-        }
-      }
+      // if (pathname.startsWith("/api/welfare-management")) {
+      //   if (token?.userType !== UserType.ADMIN || 
+      //       ![AdminRole.ADMIN, AdminRole.MANAGER, AdminRole.PRIMARY].includes(token.role as AdminRole)) {
+      //     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+      //   }
+      // }
 
       // User welfare claims APIs - User or Admin/Manager
       if (pathname.startsWith("/api/claims")) {
