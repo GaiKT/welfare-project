@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentFiscalYear, getFiscalYearRange } from "@/lib/fiscal-year";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const currentFiscalYear = getCurrentFiscalYear();
-    const { startDate, endDate } = getFiscalYearRange(currentFiscalYear);
+    const { startDate: _startDate, endDate: _endDate } = getFiscalYearRange(currentFiscalYear);
 
     // Get total users count
     const totalUsers = await prisma.user.count({

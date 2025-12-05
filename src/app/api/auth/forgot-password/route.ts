@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+    const _resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
 
     if (userType === "admin") {
       // Find admin by username or email

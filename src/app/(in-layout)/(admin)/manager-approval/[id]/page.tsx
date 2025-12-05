@@ -104,6 +104,7 @@ export default function ManagerApprovalDetailPage() {
     if (session?.user?.role === "MANAGER" && claimId) {
       fetchClaimDetail();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, claimId]);
 
   const fetchClaimDetail = async () => {

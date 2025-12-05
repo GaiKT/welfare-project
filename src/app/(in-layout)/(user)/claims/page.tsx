@@ -85,6 +85,7 @@ export default function MyClaimsPage() {
     if (session?.user) {
       fetchClaims();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, filter]);
 
   const fetchClaims = async () => {

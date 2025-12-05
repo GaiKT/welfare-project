@@ -48,6 +48,7 @@ export default function AdminClaimsPage() {
       // Only admins/managers have role property
       fetchClaims();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, filter]);
 
   const fetchClaims = async () => {

@@ -3,13 +3,12 @@ import React, { useState } from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
-import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import { useSession } from "next-auth/react";
 
 export default function PasswordResetCard() {
   const { isOpen, openModal, closeModal } = useModal();
-  const { data: session } = useSession();
+  const { data: _session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [formData, setFormData] = useState({

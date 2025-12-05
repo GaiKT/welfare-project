@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Landmark, Receipt, CircleUserRound, PhoneCall, CloudUpload  } from "lucide-react";
-import { strict } from "assert";
 
 interface Bank {
   value: string;

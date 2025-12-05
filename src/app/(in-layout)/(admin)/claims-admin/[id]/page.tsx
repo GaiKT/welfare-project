@@ -106,6 +106,7 @@ export default function AdminClaimDetailPage() {
       // Only admins/managers have role property
       fetchClaimDetail();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, claimId]);
 
   const fetchClaimDetail = async () => {
@@ -492,7 +493,7 @@ export default function AdminClaimDetailPage() {
                   rel="noopener noreferrer"
                   className="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                 >
-                  <div className="flex-shrink-0">{getFileIcon(doc.fileType)}</div>
+                  <div className="flex">{getFileIcon(doc.fileType)}</div>
                   <div className="ml-3 flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {doc.fileName}
@@ -502,7 +503,7 @@ export default function AdminClaimDetailPage() {
                     </p>
                   </div>
                   <svg
-                    className="w-5 h-5 text-gray-400 flex-shrink-0"
+                    className="w-5 h-5 text-gray-400 flex"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

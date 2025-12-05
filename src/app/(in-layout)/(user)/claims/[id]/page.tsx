@@ -94,6 +94,7 @@ export default function ClaimDetailPage() {
     if (session?.user && claimId) {
       fetchClaimDetail();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, claimId]);
 
   const fetchClaimDetail = async () => {

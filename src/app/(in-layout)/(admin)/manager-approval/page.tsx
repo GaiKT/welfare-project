@@ -66,7 +66,7 @@ export default function ManagerApprovalPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (_status: string) => {
     return (
       <span className="px-3 py-1 text-sm font-medium rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
         รออนุมัติขั้นสุดท้าย

@@ -1,4 +1,4 @@
-import { WelfareFormLeft, WelfareFormRight } from "../component/welfare-form-bank";
+import { WelfareFormLeft , WelfareFormRight } from "@/app/(in-layout)/(user)/welfare/component/welfare-form-bank"
 
 export default function DeceaseMePage() {
     const pageConfig = ["สำเนาบัตรประชาชนสมาชิก", "ทะเบียนบ้านสมาชิก", "ใบมรณะบัตร", "ทะเบียนบ้านผู้ถึงแก่กรรม", "ประทับตรา(ตาย)", "หน้าสมุดบัญชี"]

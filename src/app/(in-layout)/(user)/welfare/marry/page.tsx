@@ -1,4 +1,4 @@
-import { Landmark , File , Receipt , CircleUserRound , PhoneCall , CloudUpload } from 'lucide-react';
+import { Landmark , Receipt , CircleUserRound , PhoneCall , CloudUpload } from 'lucide-react';
 
 export default function MarryPage() {
     return (

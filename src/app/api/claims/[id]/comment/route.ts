@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UserType } from "@/types/auth";
+import { UserType as PrismaUserType } from "@prisma/client";
 
 /**
  * POST /api/claims/[id]/comment
@@ -62,7 +63,7 @@ export async function POST(
       data: {
         claimId,
         commentBy: session.user.id,
-        userType: session.user.userType,
+        userType: session.user.userType === UserType.USER ? PrismaUserType.USER : PrismaUserType.ADMIN,
         comment,
       },
     });

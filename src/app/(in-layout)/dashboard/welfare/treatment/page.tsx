@@ -1,4 +1,4 @@
-import { WelfareFormLeft, WelfareFormRight } from "../component/welfare-form-bank";
+import { WelfareFormLeft , WelfareFormRight } from "@/app/(in-layout)/(user)/welfare/component/welfare-form-bank"
 
 export default function TreatmentPage() {
     const pageConfig = ["สำเนาบัตรประชาชนสมาชิก", "หลักฐานที่สถานพยาบาลรับรองคนไข้ใน", "หน้าสมุดบัญชี"]

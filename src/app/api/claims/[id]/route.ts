@@ -146,7 +146,7 @@ export async function PUT(
     const { status, amount } = data;
 
     // Check if claim exists
-    let whereClause: any = { id };
+    const whereClause: any = { id };
 
     // Users can only update their own pending claims
     if (user.userType === UserType.USER) {
@@ -267,7 +267,7 @@ export async function DELETE(
       );
     }
 
-    let whereClause: any = { id };
+    const whereClause: any = { id };
 
     // Users can only delete their own pending claims
     if (user.userType === UserType.USER) {

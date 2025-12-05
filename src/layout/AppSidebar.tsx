@@ -12,10 +12,8 @@ import {
   GridIcon,
   HorizontaLDots,
   ListIcon,
-  PieChartIcon,
   UserCircleIcon,
 } from "../icons/index";
-import { UserSquare } from "lucide-react";
 
 type NavItem = {
   name: string;

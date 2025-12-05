@@ -57,6 +57,7 @@ function SubmitClaimForm() {
     if (session?.user) {
       fetchWelfareData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [welfareId, session]);
 
   const fetchWelfareData = async () => {

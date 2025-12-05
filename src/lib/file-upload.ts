@@ -65,14 +65,14 @@ export async function uploadFile(
   const uploadsDir = join(process.cwd(), "public", "uploads", subfolder);
   try {
     await mkdir(uploadsDir, { recursive: true });
-  } catch (error) {
+  } catch {
     // Directory might already exist
   }
 
   // Generate unique filename
   const timestamp = Date.now();
   const randomString = Math.random().toString(36).substring(2, 8);
-  const fileExtension = file.name.split(".").pop();
+  const _fileExtension = file.name.split(".").pop();
   const sanitizedName = file.name
     .replace(/[^a-zA-Z0-9.-]/g, "_")
     .substring(0, 50);
