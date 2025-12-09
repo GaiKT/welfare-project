@@ -1,10 +1,8 @@
-import { writeFile, mkdir, unlink } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { getSupabaseAdmin } from "./supabase";
 
 /**
  * File Upload Utilities
- * Helper functions for handling file uploads
+ * Helper functions for handling file uploads to Supabase Storage
  */
 
 export interface UploadedFile {
@@ -13,6 +11,9 @@ export interface UploadedFile {
   fileType: string;
   fileSize: number;
 }
+
+// Supabase Storage bucket name
+const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "uploads";
 
 const ALLOWED_FILE_TYPES = [
   "image/jpeg",
@@ -43,7 +44,7 @@ export function validateFileSize(fileSize: number): boolean {
 }
 
 /**
- * Upload a single file
+ * Upload a single file to Supabase Storage
  */
 export async function uploadFile(
   file: File,
@@ -61,41 +62,51 @@ export async function uploadFile(
     throw new Error(`File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`);
   }
 
-  // Create uploads directory if it doesn't exist
-  const uploadsDir = join(process.cwd(), "public", "uploads", subfolder);
-  try {
-    await mkdir(uploadsDir, { recursive: true });
-  } catch {
-    // Directory might already exist
-  }
+  const supabaseAdmin = getSupabaseAdmin();
 
   // Generate unique filename
   const timestamp = Date.now();
   const randomString = Math.random().toString(36).substring(2, 8);
-  const _fileExtension = file.name.split(".").pop();
+  const fileExtension = file.name.split(".").pop();
   const sanitizedName = file.name
     .replace(/[^a-zA-Z0-9.-]/g, "_")
     .substring(0, 50);
   const fileName = `${timestamp}-${randomString}-${sanitizedName}`;
-  const filePath = join(uploadsDir, fileName);
+  const filePath = `${subfolder}/${fileName}`;
 
-  // Convert file to buffer and save
+  // Convert file to buffer for upload
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
-  await writeFile(filePath, buffer);
 
-  const fileUrl = `/uploads/${subfolder}/${fileName}`;
+  // Upload to Supabase Storage
+  const { data, error } = await supabaseAdmin.storage
+    .from(STORAGE_BUCKET)
+    .upload(filePath, buffer, {
+      contentType: file.type,
+      cacheControl: "3600",
+      upsert: false,
+    });
+
+  if (error) {
+    console.error("Supabase storage upload error:", error);
+    throw new Error(`Failed to upload file: ${error.message}`);
+  }
+
+  // Get public URL for the uploaded file
+  const { data: urlData } = supabaseAdmin.storage
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(data.path);
 
   return {
     fileName,
-    fileUrl,
+    fileUrl: urlData.publicUrl,
     fileType: file.type,
     fileSize: file.size,
   };
 }
 
 /**
- * Upload multiple files
+ * Upload multiple files to Supabase Storage
  */
 export async function uploadMultipleFiles(
   files: File[],
@@ -106,21 +117,47 @@ export async function uploadMultipleFiles(
 }
 
 /**
- * Delete a file
+ * Delete a file from Supabase Storage
  */
 export async function deleteFile(fileUrl: string): Promise<void> {
   try {
-    const filePath = join(process.cwd(), "public", fileUrl);
-    if (existsSync(filePath)) {
-      await unlink(filePath);
+    const supabaseAdmin = getSupabaseAdmin();
+    
+    // Extract the file path from the URL
+    // URL format: https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
+    const url = new URL(fileUrl);
+    const pathParts = url.pathname.split("/storage/v1/object/public/");
+    
+    if (pathParts.length < 2) {
+      console.warn("Invalid Supabase storage URL:", fileUrl);
+      return;
     }
-  } catch {
+
+    // Get bucket and file path
+    const fullPath = pathParts[1];
+    const [bucket, ...filePathParts] = fullPath.split("/");
+    const filePath = filePathParts.join("/");
+
+    if (!bucket || !filePath) {
+      console.warn("Could not extract bucket or file path from URL:", fileUrl);
+      return;
+    }
+
+    const { error } = await supabaseAdmin.storage
+      .from(bucket)
+      .remove([filePath]);
+
+    if (error) {
+      console.error("Supabase storage delete error:", error);
+    }
+  } catch (error) {
+    console.error("Error deleting file:", error);
     // Don't throw error, just log it
   }
 }
 
 /**
- * Delete multiple files
+ * Delete multiple files from Supabase Storage
  */
 export async function deleteMultipleFiles(fileUrls: string[]): Promise<void> {
   const deletePromises = fileUrls.map((url) => deleteFile(url));

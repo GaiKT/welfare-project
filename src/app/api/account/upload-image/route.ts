@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentSession } from "@/lib/auth-utils";
 import { prisma } from "@/lib/prisma";
 import { UserType } from "@/types/auth";
-import { writeFile, mkdir, unlink } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "uploads";
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,32 +47,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabaseAdmin = getSupabaseAdmin();
     const userId = session.user.id;
     const subfolder = imageType === "profile" ? "profiles" : "signatures";
-    
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), "public", "uploads", subfolder);
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch {
-      // Directory might already exist
-    }
 
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 8);
     const fileExtension = file.name.split(".").pop();
     const fileName = `${userId}-${timestamp}-${randomString}.${fileExtension}`;
-    const filePath = join(uploadsDir, fileName);
+    const filePath = `${subfolder}/${fileName}`;
 
-    // Convert file to buffer and save
+    // Convert file to buffer and upload to Supabase
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
 
-    const fileUrl = `/uploads/${subfolder}/${fileName}`;
+    const { data, error: uploadError } = await supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        cacheControl: "3600",
+        upsert: false,
+      });
 
-    // Delete old image if exists
+    if (uploadError) {
+      console.error("Supabase storage upload error:", uploadError);
+      return NextResponse.json(
+        { error: "Failed to upload image" },
+        { status: 500 }
+      );
+    }
+
+    // Get public URL for the uploaded file
+    const { data: urlData } = supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(data.path);
+
+    const fileUrl = urlData.publicUrl;
+
+    // Delete old image from Supabase if exists
     let oldImageUrl: string | null = null;
     
     if (session.user.userType === UserType.ADMIN) {
@@ -82,32 +94,77 @@ export async function POST(request: NextRequest) {
         select: { image: true, signatureUrl: true },
       });
       oldImageUrl = imageType === "profile" ? admin?.image ?? null : admin?.signatureUrl ?? null;
+    } else {
+      // User type
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { image: true },
+      });
+      oldImageUrl = imageType === "profile" ? user?.image ?? null : null;
     }
-    // Note: Regular users don't have image/signature fields in the current schema
 
-    // Delete old file if exists
-    if (oldImageUrl) {
+    // Delete old file from Supabase if exists
+    if (oldImageUrl && oldImageUrl.includes("supabase")) {
       try {
-        const oldFilePath = join(process.cwd(), "public", oldImageUrl);
-        if (existsSync(oldFilePath)) {
-          await unlink(oldFilePath);
+        const url = new URL(oldImageUrl);
+        const pathParts = url.pathname.split("/storage/v1/object/public/");
+        if (pathParts.length >= 2) {
+          const fullPath = pathParts[1];
+          const [bucket, ...filePathParts] = fullPath.split("/");
+          const oldFilePath = filePathParts.join("/");
+          if (bucket && oldFilePath) {
+            await supabaseAdmin.storage.from(bucket).remove([oldFilePath]);
+          }
         }
       } catch {
-        // Ignore error if file doesn't exist
+        // Ignore error if file doesn't exist or URL is invalid
       }
     }
 
     // Update database
     if (session.user.userType === UserType.ADMIN) {
-      await prisma.admin.update({
+      // Check if admin exists first
+      const adminExists = await prisma.admin.findUnique({
         where: { id: userId },
-        data: imageType === "profile" 
-          ? { image: fileUrl, updatedAt: new Date() }
-          : { signatureUrl: fileUrl, updatedAt: new Date() },
+        select: { id: true },
       });
+      
+      if (adminExists) {
+        await prisma.admin.update({
+          where: { id: userId },
+          data: imageType === "profile" 
+            ? { image: fileUrl, updatedAt: new Date() }
+            : { signatureUrl: fileUrl, updatedAt: new Date() },
+        });
+      } else {
+        console.error("Admin not found with id:", userId);
+        return NextResponse.json(
+          { error: "Admin record not found" },
+          { status: 404 }
+        );
+      }
+    } else {
+      // User type - only support profile image
+      if (imageType === "profile") {
+        const userExists = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true },
+        });
+        
+        if (userExists) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { image: fileUrl, updatedAt: new Date() },
+          });
+        } else {
+          console.error("User not found with id:", userId);
+          return NextResponse.json(
+            { error: "User record not found" },
+            { status: 404 }
+          );
+        }
+      }
     }
-    // Note: If you need to support image upload for regular users, 
-    // you'll need to add image/signatureUrl fields to the User model
 
     return NextResponse.json(
       { 
@@ -146,6 +203,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    const supabaseAdmin = getSupabaseAdmin();
     const userId = session.user.id;
     let imageUrl: string | null = null;
 
@@ -155,17 +213,30 @@ export async function DELETE(request: NextRequest) {
         select: { image: true, signatureUrl: true },
       });
       imageUrl = imageType === "profile" ? admin?.image ?? null : admin?.signatureUrl ?? null;
+    } else {
+      // User type
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { image: true },
+      });
+      imageUrl = imageType === "profile" ? user?.image ?? null : null;
     }
 
-    // Delete file if exists
-    if (imageUrl) {
+    // Delete file from Supabase if exists
+    if (imageUrl && imageUrl.includes("supabase")) {
       try {
-        const filePath = join(process.cwd(), "public", imageUrl);
-        if (existsSync(filePath)) {
-          await unlink(filePath);
+        const url = new URL(imageUrl);
+        const pathParts = url.pathname.split("/storage/v1/object/public/");
+        if (pathParts.length >= 2) {
+          const fullPath = pathParts[1];
+          const [bucket, ...filePathParts] = fullPath.split("/");
+          const filePath = filePathParts.join("/");
+          if (bucket && filePath) {
+            await supabaseAdmin.storage.from(bucket).remove([filePath]);
+          }
         }
       } catch {
-        // Ignore error if file doesn't exist
+        // Ignore error if file doesn't exist or URL is invalid
       }
 
       // Update database
@@ -176,6 +247,14 @@ export async function DELETE(request: NextRequest) {
             ? { image: null, updatedAt: new Date() }
             : { signatureUrl: null, updatedAt: new Date() },
         });
+      } else {
+        // User type - only support profile image
+        if (imageType === "profile") {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { image: null, updatedAt: new Date() },
+          });
+        }
       }
     }
 

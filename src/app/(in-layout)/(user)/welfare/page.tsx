@@ -215,7 +215,7 @@ export default function WelfarePage() {
       {/* Info Box */}
       <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
         <div className="flex">
-          <div className="flex-shrink-0">
+          <div className="flex shrink-0">
             <svg
               className="h-5 w-5 text-blue-400"
               fill="currentColor"

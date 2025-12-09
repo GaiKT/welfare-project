@@ -49,6 +49,7 @@ export interface AuthRegularUser extends AuthUser {
   identity: string;
   firstName: string;
   lastName: string;
+  image?: string | null;
   isFirstLogin?: boolean;
   mustChangePassword?: boolean;
 }

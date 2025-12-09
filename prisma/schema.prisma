@@ -52,6 +52,7 @@ model User {
   title              String
   email              String?   @unique
   phone              String?
+  image              String? // Profile image URL
   password           String? // Optional password for user login
   isActive           Boolean   @default(true)
   isFirstLogin       Boolean   @default(true)

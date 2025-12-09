@@ -14,6 +14,7 @@ declare module "next-auth" {
       isFirstLogin?: boolean;
       mustChangePassword?: boolean;
       signatureUrl?: string | null;
+      image?: string | null;
     } & DefaultSession["user"];
   }
 
@@ -27,6 +28,7 @@ declare module "next-auth" {
     isFirstLogin?: boolean;
     mustChangePassword?: boolean;
     signatureUrl?: string | null;
+    image?: string | null;
   }
 }
 
@@ -42,5 +44,6 @@ declare module "next-auth/jwt" {
     isFirstLogin?: boolean;
     mustChangePassword?: boolean;
     signatureUrl?: string | null;
+    image?: string | null;
   }
 }

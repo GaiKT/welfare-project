@@ -134,6 +134,7 @@ export const authOptions: NextAuthOptions = {
             firstName: user.firstName,
             lastName: user.lastName,
             userType: UserType.USER,
+            image: user.image,
             isFirstLogin: user.isFirstLogin,
             mustChangePassword: user.mustChangePassword
           } as AuthRegularUser;
@@ -160,6 +161,7 @@ export const authOptions: NextAuthOptions = {
         token.userType = authUser.userType;
         token.isFirstLogin = authUser.isFirstLogin;
         token.mustChangePassword = authUser.mustChangePassword;
+        token.image = authUser.image;
         
         if (authUser.userType === UserType.ADMIN) {
           const adminUser = authUser as AuthAdmin;
@@ -178,6 +180,10 @@ export const authOptions: NextAuthOptions = {
       if (trigger === "update" && session) {
         token.name = session.name;
         token.email = session.email;
+        // Allow updating image
+        if (session.user?.image !== undefined) {
+          token.image = session.user.image;
+        }
         // Allow updating password change status
         if (session.user?.isFirstLogin !== undefined) {
           token.isFirstLogin = session.user.isFirstLogin;
@@ -195,6 +201,7 @@ export const authOptions: NextAuthOptions = {
         session.user.userType = token.userType as UserType;
         session.user.isFirstLogin = token.isFirstLogin as boolean;
         session.user.mustChangePassword = token.mustChangePassword as boolean;
+        session.user.image = token.image as string | null;
         
         if (token.userType === UserType.ADMIN) {
           session.user.username = token.username as string;

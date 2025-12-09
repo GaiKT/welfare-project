@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { UserType } from "@/types/auth";
+
+const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "uploads";
 
 /**
  * POST /api/auth/upload-signature
@@ -57,28 +58,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), "public", "uploads", "signatures");
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch {
-      // Directory might already exist
-    }
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Generate unique filename
     const timestamp = Date.now();
     const userId = session.user.id;
     const fileExtension = file.name.split(".").pop();
     const fileName = `signature-${userId}-${timestamp}.${fileExtension}`;
-    const filePath = join(uploadsDir, fileName);
+    const filePath = `signatures/${fileName}`;
 
-    // Convert file to buffer and save
+    // Convert file to buffer and upload to Supabase
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+
+    const { data, error: uploadError } = await supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Supabase storage upload error:", uploadError);
+      return NextResponse.json(
+        { error: "Failed to upload signature" },
+        { status: 500 }
+      );
+    }
+
+    // Get public URL for the uploaded file
+    const { data: urlData } = supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(data.path);
+
+    const signatureUrl = urlData.publicUrl;
 
     // Update admin signature URL in database
-    const signatureUrl = `/uploads/signatures/${fileName}`;
     await prisma.admin.update({
       where: { id: userId },
       data: {
