@@ -1,4 +1,4 @@
-import { Outfit } from 'next/font/google';
+import { Prompt } from 'next/font/google';
 import './globals.css';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -7,8 +7,9 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import SessionProvider from '@/components/providers/SessionProvider';
 import { ToastContainer } from 'react-toastify';
 
-const outfit = Outfit({
-  subsets: ["latin"],
+const prompt = Prompt({
+  weight: ["300","400","500","600","700"],
+  subsets: ["latin","thai"],
 });
 
 export default function RootLayout({
@@ -18,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${outfit.className} dark:bg-gray-900`}>
+      <body className={`${prompt.className} dark:bg-gray-900`}>
         <SessionProvider>
           <ThemeProvider>
             <SidebarProvider>
