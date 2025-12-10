@@ -11,12 +11,26 @@ interface Quota {
   welfareSubTypeId: string;
   welfareTypeName: string;
   welfareSubTypeName: string;
+  // Unit type and amount info
+  unitType: "LUMP_SUM" | "PER_NIGHT" | "PER_INCIDENT";
+  amount: number;
+  // Amount limits
+  maxPerRequest: number | null;
   maxPerYear: number | null;
   maxLifetime: number | null;
+  // Claims count limits
+  maxClaimsPerYear: number | null;
+  maxClaimsLifetime: number | null;
+  // Used amounts
   usedAmountYear: number;
   usedAmountLifetime: number;
+  usedClaimsYear: number;
+  usedClaimsLifetime: number;
+  // Calculated remaining
   remainingYear: number | null;
   remainingLifetime: number | null;
+  remainingClaimsYear: number | null;
+  remainingClaimsLifetime: number | null;
 }
 
 interface Claim {
@@ -138,7 +152,7 @@ export default function UserDashboard() {
           สวัสดี, {session?.user?.firstName}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          ปีงบประมาณ {data.fiscalYear}
+          ปีงบประมาณ {data.fiscalYear + 543}
         </p>
       </div>
 
@@ -189,9 +203,9 @@ export default function UserDashboard() {
           </h2>
           <Link
             href="/claims"
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-sm text-gray-600 dark:text-gray-400 hover:underline font-bold"
           >
-            ดูทั้งหมด →
+            ดูทั้งหมด
           </Link>
         </div>
         {data.recentClaims.length > 0 ? (
@@ -210,7 +224,7 @@ export default function UserDashboard() {
                       สถานะ
                     </th>
                     <th className="px-4 py-3 text-center font-medium text-gray-600 dark:text-gray-300">
-                      ดู
+                      การจัดการ
                     </th>
                   </tr>
                 </thead>
@@ -288,69 +302,210 @@ function QuickAction({
 function QuotaCard({ quota }: { quota: Quota }) {
   const hasYearLimit = quota.maxPerYear !== null;
   const hasLifetimeLimit = quota.maxLifetime !== null;
+  const hasClaimsYearLimit = quota.maxClaimsPerYear !== null;
+  const hasClaimsLifetimeLimit = quota.maxClaimsLifetime !== null;
 
-  // Calculate percentage
+  // Calculate percentage for progress bar
   let percentage = 0;
   if (hasYearLimit && quota.maxPerYear) {
     percentage = (quota.usedAmountYear / quota.maxPerYear) * 100;
   } else if (hasLifetimeLimit && quota.maxLifetime) {
     percentage = (quota.usedAmountLifetime / quota.maxLifetime) * 100;
+  } else if (hasClaimsYearLimit && quota.maxClaimsPerYear) {
+    percentage = (quota.usedClaimsYear / quota.maxClaimsPerYear) * 100;
+  } else if (hasClaimsLifetimeLimit && quota.maxClaimsLifetime) {
+    percentage = (quota.usedClaimsLifetime / quota.maxClaimsLifetime) * 100;
   }
 
-  const progressColor =
-    percentage >= 90 ? "bg-red-500" : percentage >= 70 ? "bg-yellow-500" : "bg-green-500";
+  const getProgressColor = (pct: number) => {
+    if (pct >= 100) return "bg-red-500";
+    if (pct >= 90) return "bg-red-400";
+    if (pct >= 70) return "bg-yellow-500";
+    return "bg-green-500";
+  };
+
+  const getUnitTypeLabel = (unitType: string) => {
+    switch (unitType) {
+      case "PER_NIGHT": return "ต่อคืน";
+      case "PER_INCIDENT": return "ต่อครั้ง";
+      default: return "เหมาจ่าย";
+    }
+  };
+
+  const getUnitTypeIcon = (unitType: string) => {
+    switch (unitType) {
+      case "PER_NIGHT":
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        );
+      case "PER_INCIDENT":
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      default:
+        return (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+    }
+  };
+
+  const isExhausted = percentage >= 100;
 
   return (
-    <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      <div className="mb-3">
-        <h3 className="font-semibold text-gray-900 dark:text-white">
-          {quota.welfareTypeName}
-        </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          {quota.welfareSubTypeName}
-        </p>
+    <div className={`relative overflow-hidden rounded-xl border transition-all hover:shadow-md ${
+      isExhausted 
+        ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800" 
+        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+    }`}>
+      {/* Header */}
+      <div className="p-4 pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+              {quota.welfareTypeName}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+              {quota.welfareSubTypeName}
+            </p>
+          </div>
+          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+            quota.unitType === "PER_NIGHT" 
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"
+              : quota.unitType === "PER_INCIDENT"
+              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300"
+              : "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+          }`}>
+            {getUnitTypeIcon(quota.unitType)}
+            <span>{getUnitTypeLabel(quota.unitType)}</span>
+          </div>
+        </div>
+
+        {/* Amount per unit */}
+        <div className="mt-2 flex items-baseline gap-1">
+          <span className="text-2xl font-bold text-gray-900 dark:text-white">
+            {quota.amount.toLocaleString()}
+          </span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            บาท{quota.unitType === "PER_NIGHT" ? "/คืน" : quota.unitType === "PER_INCIDENT" ? "/ครั้ง" : ""}
+          </span>
+        </div>
       </div>
 
-      {hasYearLimit && (
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">คงเหลือ/ปี</span>
-            <span className="font-medium text-green-600 dark:text-green-400">
-              {(quota.remainingYear ?? 0).toLocaleString()} บาท
-            </span>
-          </div>
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>ใช้ไป {quota.usedAmountYear.toLocaleString()}</span>
-            <span>จาก {(quota.maxPerYear ?? 0).toLocaleString()} บาท</span>
-          </div>
-        </div>
-      )}
+      {/* Quota Details */}
+      <div className="px-4 pb-4 space-y-3">
+        {/* Year Limit - Amount */}
+        {hasYearLimit && (
+          <QuotaProgressItem
+            label="วงเงินต่อปี"
+            used={quota.usedAmountYear}
+            max={quota.maxPerYear!}
+            remaining={quota.remainingYear!}
+            unit="บาท"
+            color={getProgressColor((quota.usedAmountYear / quota.maxPerYear!) * 100)}
+          />
+        )}
 
-      {hasLifetimeLimit && (
-        <div className="space-y-1 text-sm mt-2">
-          <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">คงเหลือตลอดอายุ</span>
-            <span className="font-medium text-green-600 dark:text-green-400">
-              {(quota.remainingLifetime ?? 0).toLocaleString()} บาท
-            </span>
-          </div>
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>ใช้ไป {quota.usedAmountLifetime.toLocaleString()}</span>
-            <span>จาก {(quota.maxLifetime ?? 0).toLocaleString()} บาท</span>
-          </div>
-        </div>
-      )}
+        {/* Lifetime Limit - Amount */}
+        {hasLifetimeLimit && (
+          <QuotaProgressItem
+            label="วงเงินตลอดสมาชิก"
+            used={quota.usedAmountLifetime}
+            max={quota.maxLifetime!}
+            remaining={quota.remainingLifetime!}
+            unit="บาท"
+            color={getProgressColor((quota.usedAmountLifetime / quota.maxLifetime!) * 100)}
+          />
+        )}
 
-      {(hasYearLimit || hasLifetimeLimit) && (
-        <div className="mt-3">
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-            <div
-              className={`h-1.5 rounded-full ${progressColor}`}
-              style={{ width: `${Math.min(percentage, 100)}%` }}
-            />
+        {/* Year Limit - Claims Count */}
+        {hasClaimsYearLimit && (
+          <QuotaProgressItem
+            label="จำนวนครั้งต่อปี"
+            used={quota.usedClaimsYear}
+            max={quota.maxClaimsPerYear!}
+            remaining={quota.remainingClaimsYear!}
+            unit="ครั้ง"
+            color={getProgressColor((quota.usedClaimsYear / quota.maxClaimsPerYear!) * 100)}
+          />
+        )}
+
+        {/* Lifetime Limit - Claims Count */}
+        {hasClaimsLifetimeLimit && (
+          <QuotaProgressItem
+            label="จำนวนครั้งตลอดสมาชิก"
+            used={quota.usedClaimsLifetime}
+            max={quota.maxClaimsLifetime!}
+            remaining={quota.remainingClaimsLifetime!}
+            unit="ครั้ง"
+            color={getProgressColor((quota.usedClaimsLifetime / quota.maxClaimsLifetime!) * 100)}
+          />
+        )}
+
+        {/* No limits info */}
+        {!hasYearLimit && !hasLifetimeLimit && !hasClaimsYearLimit && !hasClaimsLifetimeLimit && (
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span>ไม่จำกัดวงเงิน</span>
           </div>
+        )}
+      </div>
+
+      {/* Exhausted Overlay */}
+      {isExhausted && (
+        <div className="absolute top-2 right-2">
+          <span className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+            ใช้สิทธิ์ครบแล้ว
+          </span>
         </div>
       )}
+    </div>
+  );
+}
+
+// Progress Item Component
+function QuotaProgressItem({
+  label,
+  used,
+  max,
+  remaining,
+  unit,
+  color,
+}: {
+  label: string;
+  used: number;
+  max: number;
+  remaining: number;
+  unit: string;
+  color: string;
+}) {
+  const percentage = Math.min((used / max) * 100, 100);
+
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between items-center text-sm">
+        <span className="text-gray-600 dark:text-gray-400">{label}</span>
+        <span className={`font-semibold ${remaining > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+          {remaining.toLocaleString()} {unit}
+        </span>
+      </div>
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+        <div
+          className={`h-2 rounded-full transition-all ${color}`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
+        <span>ใช้ไป {used.toLocaleString()} {unit}</span>
+        <span>จาก {max.toLocaleString()} {unit}</span>
+      </div>
     </div>
   );
 }
@@ -374,7 +529,7 @@ function ClaimRow({ claim }: { claim: Claim }) {
         {claim.requestedAmount.toLocaleString()} ฿
       </td>
       <td className="px-4 py-3 text-center">
-        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${config.className}`}>
+        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md shadow ${config.className}`}>
           {config.text}
         </span>
       </td>
@@ -383,7 +538,7 @@ function ClaimRow({ claim }: { claim: Claim }) {
           href={`/claims/${claim.id}`}
           className="text-blue-600 dark:text-blue-400 hover:underline"
         >
-          ดู
+          ดูรายละเอียด
         </Link>
       </td>
     </tr>

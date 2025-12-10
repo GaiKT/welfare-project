@@ -87,20 +87,40 @@ export async function GET() {
         const quota = quotaMap.get(subType.id);
         const usedAmountYear = quota?.usedAmountYear ?? 0;
         const usedAmountLifetime = quota?.usedAmountLifetime ?? 0;
+        const usedClaimsYear = quota?.usedClaimsYear ?? 0;
+        const usedClaimsLifetime = quota?.usedClaimsLifetime ?? 0;
 
         quotas.push({
           welfareSubTypeId: subType.id,
           welfareTypeName: welfareType.name,
           welfareSubTypeName: subType.name,
+          // Unit type and amount info
+          unitType: subType.unitType,
+          amount: subType.amount,
+          // Amount limits
+          maxPerRequest: subType.maxPerRequest,
           maxPerYear: subType.maxPerYear,
           maxLifetime: subType.maxLifetime,
+          // Claims count limits
+          maxClaimsPerYear: subType.maxClaimsPerYear,
+          maxClaimsLifetime: subType.maxClaimsLifetime,
+          // Used amounts
           usedAmountYear,
           usedAmountLifetime,
+          usedClaimsYear,
+          usedClaimsLifetime,
+          // Calculated remaining
           remainingYear: subType.maxPerYear
-            ? subType.maxPerYear - usedAmountYear
+            ? Math.max(0, subType.maxPerYear - usedAmountYear)
             : null,
           remainingLifetime: subType.maxLifetime
-            ? subType.maxLifetime - usedAmountLifetime
+            ? Math.max(0, subType.maxLifetime - usedAmountLifetime)
+            : null,
+          remainingClaimsYear: subType.maxClaimsPerYear
+            ? Math.max(0, subType.maxClaimsPerYear - usedClaimsYear)
+            : null,
+          remainingClaimsLifetime: subType.maxClaimsLifetime
+            ? Math.max(0, subType.maxClaimsLifetime - usedClaimsLifetime)
             : null,
         });
       }

@@ -14,10 +14,14 @@ interface Notification {
   createdAt: string;
   claim?: {
     id: string;
-    amount: number;
+    requestedAmount: number;
+    approvedAmount: number | null;
     status: string;
-    welfare: {
+    welfareSubType: {
       name: string;
+      welfareType: {
+        name: string;
+      };
     };
   } | null;
 }
@@ -329,7 +333,7 @@ export default function NotificationDropdown() {
                       <span className="flex items-center gap-2 text-gray-400 text-xs dark:text-gray-500">
                         {notification.claim && (
                           <>
-                            <span>{notification.claim.welfare.name}</span>
+                            <span>{notification.claim.welfareSubType.welfareType.name}</span>
                             <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
                           </>
                         )}
