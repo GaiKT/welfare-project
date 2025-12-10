@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getCurrentUser } from "@/lib/auth-permissions";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * GET /api/welfare-management
+ * Get all welfare types with their sub-types and required documents
+ */
 export async function GET() {
   try {
     // Allow all authenticated users to view welfare programs
@@ -13,76 +17,151 @@ export async function GET() {
       );
     }
 
-    const welfarePrograms = await prisma.welfare.findMany({
+    const welfareTypes = await prisma.welfareType.findMany({
+      where: {
+        isActive: true,
+      },
       include: {
+        subTypes: {
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            sortOrder: "asc",
+          },
+        },
+        requiredDocuments: {
+          orderBy: {
+            sortOrder: "asc",
+          },
+        },
         _count: {
           select: {
-            claims: true,
+            subTypes: true,
+            requiredDocuments: true,
           },
         },
       },
       orderBy: {
-        createdAt: "desc",
+        sortOrder: "asc",
       },
     });
 
-    console.log("Fetched welfare programs:", welfarePrograms);
+    console.log("Fetched welfare types:", welfareTypes.length);
 
-    return NextResponse.json({ welfarePrograms });
+    return NextResponse.json({ 
+      success: true,
+      data: {
+        welfareTypes,
+        // Keep old name for backward compatibility
+        welfarePrograms: welfareTypes,
+      },
+    });
   } catch (error) {
-    console.error("Error fetching welfare programs:", error);
+    console.error("Error fetching welfare types:", error);
     return NextResponse.json(
-      { error: "Failed to fetch welfare programs" },
+      { success: false, error: "Failed to fetch welfare types" },
       { status: 500 }
     );
   }
 }
 
+/**
+ * POST /api/welfare-management
+ * Create a new welfare type with sub-types and required documents
+ */
 export async function POST(request: NextRequest) {
   try {
     await requireAdmin();
 
     const data = await request.json();
-    const { name, description, budget, maxUsed, duration } = data;
+    const { code, name, description, subTypes, requiredDocuments } = data;
 
     // Validate required fields
-    if (!name || !budget || !maxUsed || !duration) {
+    if (!code || !name) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Code and name are required" },
         { status: 400 }
       );
     }
 
-    // Validate numeric fields
-    if (budget <= 0 || maxUsed <= 0 || duration <= 0) {
+    // Check if code already exists
+    const existingWelfare = await prisma.welfareType.findUnique({
+      where: { code },
+    });
+
+    if (existingWelfare) {
       return NextResponse.json(
-        { error: "Budget, max usage, and duration must be positive numbers" },
+        { error: "Welfare type with this code already exists" },
         { status: 400 }
       );
     }
 
-    if (maxUsed > budget) {
-      return NextResponse.json(
-        { error: "Maximum individual usage cannot exceed total budget" },
-        { status: 400 }
-      );
-    }
-
-    const welfare = await prisma.welfare.create({
+    // Create welfare type with sub-types and documents
+    const welfareType = await prisma.welfareType.create({
       data: {
+        code,
         name,
         description: description || null,
-        budget,
-        maxUsed,
-        duration,
+        subTypes: subTypes?.length > 0 ? {
+          create: subTypes.map((st: {
+            code: string;
+            name: string;
+            description?: string;
+            amount: number;
+            unitType?: string;
+            maxPerRequest?: number;
+            maxPerYear?: number;
+            maxLifetime?: number;
+            maxClaimsPerYear?: number;
+            maxClaimsLifetime?: number;
+            sortOrder?: number;
+          }, index: number) => ({
+            code: st.code,
+            name: st.name,
+            description: st.description || null,
+            amount: st.amount,
+            unitType: st.unitType || "LUMP_SUM",
+            maxPerRequest: st.maxPerRequest || null,
+            maxPerYear: st.maxPerYear || null,
+            maxLifetime: st.maxLifetime || null,
+            maxClaimsPerYear: st.maxClaimsPerYear || null,
+            maxClaimsLifetime: st.maxClaimsLifetime || null,
+            sortOrder: st.sortOrder || index + 1,
+          })),
+        } : undefined,
+        requiredDocuments: requiredDocuments?.length > 0 ? {
+          create: requiredDocuments.map((doc: {
+            name: string;
+            description?: string;
+            isRequired?: boolean;
+            sortOrder?: number;
+          }, index: number) => ({
+            name: doc.name,
+            description: doc.description || null,
+            isRequired: doc.isRequired !== false,
+            sortOrder: doc.sortOrder || index + 1,
+          })),
+        } : undefined,
+      },
+      include: {
+        subTypes: true,
+        requiredDocuments: true,
       },
     });
 
-    return NextResponse.json({ welfare }, { status: 201 });
+    return NextResponse.json({ 
+      success: true,
+      message: "Welfare type created successfully",
+      data: {
+        welfareType,
+        welfare: welfareType, // backward compatibility
+      },
+    }, { status: 201 });
   } catch (error) {
-    console.error("Error creating welfare program:", error);
+    console.error("Error creating welfare type:", error);
     return NextResponse.json(
-      { error: "Failed to create welfare program" },
+      { success: false, error: "Failed to create welfare type" },
       { status: 500 }
     );
   }

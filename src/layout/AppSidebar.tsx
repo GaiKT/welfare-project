@@ -88,15 +88,6 @@ const navItems: NavItem[] = [
 ];
 
 const othersItems: NavItem[] = [
-  // {
-  //   icon: <PieChartIcon />,
-  //   name: "รายงาน",
-  //   subItems: [
-  //     { name: "รายงานสวัสดิการ", path: "/reports/welfare", pro: false, roles: [UserType.ADMIN] },
-  //     { name: "รายงานคำร้องขอรับสวัสดิการ", path: "/reports/claims", pro: false, roles: [UserType.ADMIN] },
-  //   ],
-  //   roles: [UserType.ADMIN], // Admin only
-  // },
   {
     icon: <BoxCubeIcon />,
     name: "การตั้งค่าระบบ",

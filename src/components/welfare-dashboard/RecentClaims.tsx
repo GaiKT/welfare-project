@@ -11,8 +11,10 @@ import Badge from "../ui/badge/Badge";
 interface RecentClaim {
   id: string;
   userName: string;
-  welfareName: string;
-  amount: number;
+  welfareTypeName: string;
+  subTypeName: string;
+  requestedAmount: number;
+  approvedAmount: number | null;
   status: string;
   submittedDate: string;
 }
@@ -140,11 +142,16 @@ export default function RecentClaims({ data }: RecentClaimsProps) {
                       {claim.userName}
                     </p>
                   </TableCell>
-                  <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                    {claim.welfareName}
+                  <TableCell className="py-3">
+                    <p className="text-gray-800 text-theme-sm dark:text-white/90">
+                      {claim.welfareTypeName}
+                    </p>
+                    <p className="text-gray-500 text-theme-xs dark:text-gray-400">
+                      {claim.subTypeName}
+                    </p>
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                    {formatCurrency(claim.amount)}
+                    {formatCurrency(claim.requestedAmount)}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                     {formatDate(claim.submittedDate)}

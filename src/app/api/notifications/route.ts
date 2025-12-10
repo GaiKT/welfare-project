@@ -33,11 +33,17 @@ export async function GET(request: NextRequest) {
         claim: {
           select: {
             id: true,
-            amount: true,
+            requestedAmount: true,
+            approvedAmount: true,
             status: true,
-            welfare: {
+            welfareSubType: {
               select: {
                 name: true,
+                welfareType: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -54,8 +60,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      notifications,
-      unreadCount,
+      data:{
+        notifications,
+        unreadCount,
+      }
     });
   } catch (error) {
     console.error("Get notifications error:", error);

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminRole, UserType } from "@/types/auth";
+import { updateWelfareQuota } from "@/lib/welfare-validation";
 
 /**
  * POST /api/claims/[id]/manager-approve
@@ -36,14 +37,18 @@ export async function POST(
 
     const { id: claimId } = await params;
     const body = await request.json();
-    const { comments } = body;
+    const { comments, approvedAmount } = body;
 
     // Get claim
     const claim = await prisma.welfareClaims.findUnique({
       where: { id: claimId },
       include: {
         user: true,
-        welfare: true,
+        welfareSubType: {
+          include: {
+            welfareType: true,
+          },
+        },
       },
     });
 
@@ -62,11 +67,17 @@ export async function POST(
       );
     }
 
+    // Set approved amount (use requested amount if not specified)
+    const finalApprovedAmount = approvedAmount !== undefined 
+      ? approvedAmount 
+      : claim.requestedAmount;
+
     // Update claim status to completed
     const updatedClaim = await prisma.welfareClaims.update({
       where: { id: claimId },
       data: {
         status: "COMPLETED",
+        approvedAmount: finalApprovedAmount,
         managerApproverId: session.user.id,
         managerApprovedAt: new Date(),
         completedDate: new Date(),
@@ -84,45 +95,13 @@ export async function POST(
       },
     });
 
-    // Update welfare quota
-    const fiscalYear = claim.fiscalYear;
-    const existingQuota = await prisma.welfareQuota.findUnique({
-      where: {
-        userId_welfareId_fiscalYear: {
-          userId: claim.userId,
-          welfareId: claim.welfareId,
-          fiscalYear,
-        },
-      },
-    });
-
-    if (existingQuota) {
-      await prisma.welfareQuota.update({
-        where: {
-          userId_welfareId_fiscalYear: {
-            userId: claim.userId,
-            welfareId: claim.welfareId,
-            fiscalYear,
-          },
-        },
-        data: {
-          usedAmount: existingQuota.usedAmount + claim.amount,
-          remainingAmount: existingQuota.remainingAmount - claim.amount,
-        },
-      });
-    } else {
-      // Create new quota record
-      await prisma.welfareQuota.create({
-        data: {
-          userId: claim.userId,
-          welfareId: claim.welfareId,
-          fiscalYear,
-          totalQuota: claim.welfare.maxUsed,
-          usedAmount: claim.amount,
-          remainingAmount: claim.welfare.maxUsed - claim.amount,
-        },
-      });
-    }
+    // Update welfare quota using the new structure
+    await updateWelfareQuota(
+      claim.userId,
+      claim.welfareSubTypeId,
+      claim.fiscalYear,
+      finalApprovedAmount
+    );
 
     // Create notification for user
     await prisma.notification.create({
@@ -130,7 +109,7 @@ export async function POST(
         userId: claim.userId,
         type: "CLAIM_COMPLETED",
         title: "คำร้องได้รับการอนุมัติเรียบร้อย",
-        message: `คำร้อง ${claim.welfare.name} จำนวน ${claim.amount} บาท ได้รับการอนุมัติเรียบร้อยแล้ว`,
+        message: `คำร้อง ${claim.welfareSubType.welfareType.name} - ${claim.welfareSubType.name} จำนวน ${finalApprovedAmount} บาท ได้รับการอนุมัติเรียบร้อยแล้ว`,
         relatedClaimId: claimId,
       },
     });
@@ -148,12 +127,14 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: "Claim approved by manager successfully",
-      claim: updatedClaim,
+      data: {
+        claim: updatedClaim,
+      },
     });
   } catch (error) {
     console.error("Manager approve claim error:", error);
     return NextResponse.json(
-      { error: "Failed to approve claim" },
+      { success: false, error: "Failed to approve claim" },
       { status: 500 }
     );
   }

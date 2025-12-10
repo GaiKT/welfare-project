@@ -8,6 +8,7 @@ import { PageLoading } from "@/components/ui/loading";
 
 interface ClaimDocument {
   id: string;
+  documentName: string;
   fileName: string;
   fileUrl: string;
   fileType: string;
@@ -40,10 +41,21 @@ interface ClaimComment {
 
 interface ClaimDetail {
   id: string;
-  welfare: {
+  welfareSubType: {
     id: string;
     name: string;
     description: string | null;
+    amount: number;
+    unitType: string;
+    maxPerRequest: number | null;
+    maxPerYear: number | null;
+    maxLifetime: number | null;
+    welfareType: {
+      id: string;
+      name: string;
+      code: string;
+      description: string | null;
+    };
   };
   user: {
     identity: string;
@@ -51,10 +63,19 @@ interface ClaimDetail {
     lastName: string;
     title: string | null;
   };
-  amount: number;
+  requestedAmount: number;
+  approvedAmount: number | null;
+  nights: number | null;
+  beneficiaryName: string | null;
+  beneficiaryRelation: string | null;
+  hospitalName: string | null;
+  admissionDate: string | null;
+  dischargeDate: string | null;
+  incidentDate: string | null;
   status: string;
-  description: string;
+  description: string | null;
   fiscalYear: number;
+  submittedDate: string;
   createdAt: string;
   documents: ClaimDocument[];
   approvals: ClaimApproval[];
@@ -102,8 +123,12 @@ export default function ClaimDetailPage() {
       setLoading(true);
       const response = await fetch(`/api/claims/${claimId}`);
       if (response.ok) {
-        const data = await response.json();
-        setClaim(data.claim);
+        const result = await response.json();
+        if (result.success) {
+          setClaim(result.data?.claim);
+        } else {
+          setError(result.error || "ไม่พบข้อมูลคำร้อง");
+        }
       } else {
         setError("ไม่พบข้อมูลคำร้อง");
       }
@@ -202,6 +227,26 @@ export default function ClaimDetailPage() {
     );
   };
 
+  const getBeneficiaryRelationText = (relation: string | null) => {
+    const relationMap: Record<string, string> = {
+      SELF: "ตนเอง",
+      SPOUSE: "คู่สมรส",
+      CHILD: "บุตร",
+      FATHER: "บิดา",
+      MOTHER: "มารดา",
+    };
+    return relation ? relationMap[relation] || relation : "-";
+  };
+
+  const getUnitTypeText = (unitType: string) => {
+    const unitMap: Record<string, string> = {
+      LUMP_SUM: "เหมาจ่าย",
+      PER_NIGHT: "ต่อคืน",
+      PER_INCIDENT: "ต่อครั้ง",
+    };
+    return unitMap[unitType] || unitType;
+  };
+
   if (status === "loading" || loading) {
     return <PageLoading text="กำลังโหลด..." fullScreen />;
   }
@@ -248,35 +293,158 @@ export default function ClaimDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Claim Info */}
+          {/* Welfare Info */}
           <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              ข้อมูลคำร้อง
+              ข้อมูลสวัสดิการ
             </h2>
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  สวัสดิการ
-                </label>
-                <p className="text-lg text-gray-900 dark:text-white">{claim.welfare.name}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  จำนวนเงิน
-                </label>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {claim.amount.toLocaleString()} บาท
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  รายละเอียด
-                </label>
-                <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
-                  {claim.description}
-                </p>
-              </div>
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    ประเภทสวัสดิการ
+                  </label>
+                  <p className="text-lg text-gray-900 dark:text-white">
+                    {claim.welfareSubType.welfareType.name}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    หมวดย่อย
+                  </label>
+                  <p className="text-lg text-gray-900 dark:text-white">
+                    {claim.welfareSubType.name}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    จำนวนเงินที่ขอเบิก
+                  </label>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {claim.requestedAmount.toLocaleString()} บาท
+                  </p>
+                </div>
+                {claim.approvedAmount && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      จำนวนเงินที่อนุมัติ
+                    </label>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {claim.approvedAmount.toLocaleString()} บาท
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    อัตราสวัสดิการ
+                  </label>
+                  <p className="text-gray-900 dark:text-white">
+                    {claim.welfareSubType.amount.toLocaleString()} บาท/{getUnitTypeText(claim.welfareSubType.unitType)}
+                  </p>
+                </div>
+                {claim.nights && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      จำนวนคืนที่พักรักษาตัว
+                    </label>
+                    <p className="text-gray-900 dark:text-white">{claim.nights} คืน</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Details */}
+          <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              รายละเอียดเพิ่มเติม
+            </h2>
+            <div className="space-y-4">
+              {/* Beneficiary Info - for Funeral welfare */}
+              {claim.beneficiaryName && (
+                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      ชื่อผู้เสียชีวิต
+                    </label>
+                    <p className="text-gray-900 dark:text-white">{claim.beneficiaryName}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      ความสัมพันธ์
+                    </label>
+                    <p className="text-gray-900 dark:text-white">
+                      {getBeneficiaryRelationText(claim.beneficiaryRelation)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Hospital Info - for Medical welfare */}
+              {claim.hospitalName && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      โรงพยาบาล
+                    </label>
+                    <p className="text-gray-900 dark:text-white">{claim.hospitalName}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {claim.admissionDate && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          วันที่เข้าพัก
+                        </label>
+                        <p className="text-gray-900 dark:text-white">
+                          {new Date(claim.admissionDate).toLocaleDateString("th-TH")}
+                        </p>
+                      </div>
+                    )}
+                    {claim.dischargeDate && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          วันที่ออก
+                        </label>
+                        <p className="text-gray-900 dark:text-white">
+                          {new Date(claim.dischargeDate).toLocaleDateString("th-TH")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Incident Date - for Disaster welfare */}
+              {claim.incidentDate && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    วันที่เกิดเหตุ
+                  </label>
+                  <p className="text-gray-900 dark:text-white">
+                    {new Date(claim.incidentDate).toLocaleDateString("th-TH")}
+                  </p>
+                </div>
+              )}
+
+              {/* Description */}
+              {claim.description && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    รายละเอียด
+                  </label>
+                  <p className="text-gray-900 dark:text-white whitespace-pre-wrap mt-1">
+                    {claim.description}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <div>
                   <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     ปีงบประมาณ
@@ -288,7 +456,7 @@ export default function ClaimDetailPage() {
                     วันที่ยื่นคำร้อง
                   </label>
                   <p className="text-gray-900 dark:text-white">
-                    {new Date(claim.createdAt).toLocaleString("th-TH")}
+                    {new Date(claim.submittedDate || claim.createdAt).toLocaleString("th-TH")}
                   </p>
                 </div>
               </div>
@@ -310,30 +478,39 @@ export default function ClaimDetailPage() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               เอกสารแนบ ({claim.documents.length})
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {claim.documents.map((doc) => (
-                <a
-                  key={doc.id}
-                  href={doc.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <div className="flex-shrink-0">{getFileIcon(doc.fileType)}</div>
-                  <div className="ml-3 flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {doc.fileName}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatFileSize(doc.fileSize)}
-                    </p>
-                  </div>
-                  <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
-              ))}
-            </div>
+            {claim.documents.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {claim.documents.map((doc) => (
+                  <a
+                    key={doc.id}
+                    href={doc.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <div className="flex-shrink-0">{getFileIcon(doc.fileType)}</div>
+                    <div className="ml-3 flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {doc.documentName || "เอกสารแนบ"}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {doc.fileName}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatFileSize(doc.fileSize)}
+                      </p>
+                    </div>
+                    <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+                ไม่มีเอกสารแนบ
+              </p>
+            )}
           </div>
 
           {/* Comments */}
@@ -400,6 +577,45 @@ export default function ClaimDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Quota Info */}
+          <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              เงื่อนไขสวัสดิการ
+            </h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">อัตรา:</span>
+                <span className="text-gray-900 dark:text-white font-medium">
+                  {claim.welfareSubType.amount.toLocaleString()} บาท
+                </span>
+              </div>
+              {claim.welfareSubType.maxPerRequest && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">สูงสุด/ครั้ง:</span>
+                  <span className="text-gray-900 dark:text-white font-medium">
+                    {claim.welfareSubType.maxPerRequest.toLocaleString()} บาท
+                  </span>
+                </div>
+              )}
+              {claim.welfareSubType.maxPerYear && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">สูงสุด/ปี:</span>
+                  <span className="text-gray-900 dark:text-white font-medium">
+                    {claim.welfareSubType.maxPerYear.toLocaleString()} บาท
+                  </span>
+                </div>
+              )}
+              {claim.welfareSubType.maxLifetime && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">สูงสุดตลอดอายุ:</span>
+                  <span className="text-gray-900 dark:text-white font-medium">
+                    {claim.welfareSubType.maxLifetime.toLocaleString()} บาท
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Timeline */}
           <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -421,7 +637,7 @@ export default function ClaimDetailPage() {
                 <div className="flex-1 pb-4">
                   <p className="font-medium text-gray-900 dark:text-white">ยื่นคำร้อง</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(claim.createdAt).toLocaleString("th-TH")}
+                    {new Date(claim.submittedDate || claim.createdAt).toLocaleString("th-TH")}
                   </p>
                 </div>
               </div>
@@ -478,7 +694,7 @@ export default function ClaimDetailPage() {
               <div className="space-y-3">
                 {claim.adminApprover && (
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Admin</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Admin (ขั้นที่ 1)</p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {claim.adminApprover.name}
                     </p>
@@ -491,7 +707,7 @@ export default function ClaimDetailPage() {
                 )}
                 {claim.managerApprover && (
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Manager</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Manager (ขั้นที่ 2)</p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {claim.managerApprover.name}
                     </p>

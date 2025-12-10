@@ -112,8 +112,12 @@ export default function ManagerApprovalDetailPage() {
       setLoading(true);
       const response = await fetch(`/api/claims/${claimId}`);
       if (response.ok) {
-        const data = await response.json();
-        setClaim(data.claim);
+        const result = await response.json();
+        if (result.success) {
+          setClaim(result.data?.claim);
+        } else {
+          setError(result.error || "ไม่พบข้อมูลคำร้อง");
+        }
       } else {
         setError("ไม่พบข้อมูลคำร้อง");
       }

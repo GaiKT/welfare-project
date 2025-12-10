@@ -20,10 +20,8 @@ interface DashboardData {
     approvedClaims: number;
   };
   budget: {
-    totalBudget: number;
+    totalSubTypes: number;
     usedAmount: number;
-    remainingAmount: number;
-    usagePercent: number;
   };
   monthlyClaimsData: number[];
   claimsByStatus: {
@@ -31,17 +29,19 @@ interface DashboardData {
     count: number;
   }[];
   claimsByWelfare: {
-    welfareId: string;
-    welfareName: string;
-    budget: number;
+    welfareSubTypeId: string;
+    welfareTypeName: string;
+    subTypeName: string;
     claimCount: number;
     totalAmount: number;
   }[];
   recentClaims: {
     id: string;
     userName: string;
-    welfareName: string;
-    amount: number;
+    welfareTypeName: string;
+    subTypeName: string;
+    requestedAmount: number;
+    approvedAmount: number | null;
     status: string;
     submittedDate: string;
   }[];

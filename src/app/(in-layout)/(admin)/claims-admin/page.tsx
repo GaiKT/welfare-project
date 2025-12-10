@@ -62,8 +62,10 @@ export default function AdminClaimsPage() {
 
       const response = await fetch(url);
       if (response.ok) {
-        const data = await response.json();
-        setClaims(data.claims || []);
+        const result = await response.json();
+        if (result.success) {
+          setClaims(result.data?.claims || []);
+        }
       }
     } catch (error) {
       console.error("Error fetching claims:", error);

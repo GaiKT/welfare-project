@@ -6,39 +6,72 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { PageLoading, InlineLoading } from "@/components/ui/loading";
 
-interface Welfare {
+interface RequiredDocument {
   id: string;
   name: string;
   description: string | null;
-  budget: number;
-  maxUsed: number;
-  duration: number;
+  isRequired: boolean;
 }
 
-interface WelfareQuota {
-  welfareId: string;
-  welfareName: string;
-  totalQuota: number;
-  usedAmount: number;
-  remainingAmount: number;
-  usagePercentage: number;
+interface WelfareSubType {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  amount: number;
+  unitType: "LUMP_SUM" | "PER_NIGHT" | "PER_INCIDENT";
+  maxPerRequest: number | null;
+  maxPerYear: number | null;
+  maxLifetime: number | null;
+  maxClaimsLifetime: number | null;
+  welfareType: {
+    id: string;
+    code: string;
+    name: string;
+    requiredDocuments: RequiredDocument[];
+  };
 }
+
+interface SubTypeQuota {
+  subTypeId: string;
+  usedAmountYear: number;
+  usedClaimsYear: number;
+  usedAmountLifetime: number;
+  usedClaimsLifetime: number;
+  remainingPerYear: number | null;
+  remainingLifetime: number | null;
+  remainingClaimsLifetime: number | null;
+  canClaim: boolean;
+}
+
+const unitTypeLabels: Record<string, string> = {
+  LUMP_SUM: "เหมาจ่าย",
+  PER_NIGHT: "ต่อคืน",
+  PER_INCIDENT: "ต่อครั้ง",
+};
 
 function SubmitClaimForm() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const welfareId = searchParams.get("welfareId");
+  const subTypeId = searchParams.get("subTypeId");
 
-  const [welfare, setWelfare] = useState<Welfare | null>(null);
-  const [quota, setQuota] = useState<WelfareQuota | null>(null);
+  const [subType, setSubType] = useState<WelfareSubType | null>(null);
+  const [quota, setQuota] = useState<SubTypeQuota | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
-    amount: "",
+    requestedAmount: "",
     description: "",
+    nights: "",
+    beneficiaryName: "",
+    beneficiaryRelation: "SELF",
+    incidentDate: "",
+    hospitalName: "",
+    admissionDate: "",
+    dischargeDate: "",
     files: [] as File[],
   });
 
@@ -49,37 +82,50 @@ function SubmitClaimForm() {
   }, [status, router]);
 
   useEffect(() => {
-    if (!welfareId) {
+    if (!subTypeId) {
       router.push("/welfare");
       return;
     }
 
     if (session?.user) {
-      fetchWelfareData();
+      fetchSubTypeData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [welfareId, session]);
+  }, [subTypeId, session]);
 
-  const fetchWelfareData = async () => {
+  const fetchSubTypeData = async () => {
     try {
       setLoading(true);
 
-      // Fetch welfare details
-      const welfareRes = await fetch(`/api/welfare-management/${welfareId}`);
-      if (welfareRes.ok) {
-        const data = await welfareRes.json();
-        setWelfare(data.welfare);
+      // Fetch sub-type details
+      const res = await fetch(`/api/welfare-management/sub-types/${subTypeId}`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          setSubType(result.data);
+        } else {
+          setError("ไม่พบข้อมูลประเภทสวัสดิการ");
+          return;
+        }
       } else {
-        setError("ไม่พบข้อมูลสวัสดิการ");
+        setError("ไม่พบข้อมูลประเภทสวัสดิการ");
         return;
       }
 
       // Fetch quota
       const quotaRes = await fetch("/api/quota/calculate");
       if (quotaRes.ok) {
-        const data = await quotaRes.json();
-        const matchedQuota = data.quotas.find((q: WelfareQuota) => q.welfareId === welfareId);
-        setQuota(matchedQuota || null);
+        const quotaResult = await quotaRes.json();
+        if (quotaResult.success) {
+          // Find the quota for this sub-type
+          for (const wt of quotaResult.data?.quotas || []) {
+            const stQuota = wt.subTypes.find((st: SubTypeQuota) => st.subTypeId === subTypeId);
+            if (stQuota) {
+              setQuota(stQuota);
+              break;
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -88,6 +134,24 @@ function SubmitClaimForm() {
       setLoading(false);
     }
   };
+
+  // Calculate amount based on type
+  useEffect(() => {
+    if (!subType) return;
+
+    if (subType.unitType === "LUMP_SUM") {
+      setFormData((prev) => ({ ...prev, requestedAmount: subType.amount.toString() }));
+    } else if (subType.unitType === "PER_NIGHT" && formData.nights) {
+      const nights = parseInt(formData.nights);
+      if (!isNaN(nights)) {
+        let amount = nights * subType.amount;
+        if (subType.maxPerRequest && amount > subType.maxPerRequest) {
+          amount = subType.maxPerRequest;
+        }
+        setFormData((prev) => ({ ...prev, requestedAmount: amount.toString() }));
+      }
+    }
+  }, [subType, formData.nights]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -107,29 +171,24 @@ function SubmitClaimForm() {
     e.preventDefault();
     setError("");
 
-    if (!welfare || !welfareId) {
+    if (!subType || !subTypeId) {
       setError("ข้อมูลสวัสดิการไม่ครบถ้วน");
       return;
     }
 
-    const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0) {
+    const requestedAmount = parseFloat(formData.requestedAmount);
+    if (isNaN(requestedAmount) || requestedAmount <= 0) {
       setError("กรุณาระบุจำนวนเงินที่ถูกต้อง");
       return;
     }
 
-    if (quota && amount > quota.remainingAmount) {
-      setError(`จำนวนเงินเกินโควตาคงเหลือ (${quota.remainingAmount.toLocaleString()} บาท)`);
+    if (subType.maxPerRequest && requestedAmount > subType.maxPerRequest) {
+      setError(`จำนวนเงินเกินสิทธิ์สูงสุดต่อครั้ง (${subType.maxPerRequest.toLocaleString()} บาท)`);
       return;
     }
 
-    if (amount > welfare.maxUsed) {
-      setError(`จำนวนเงินเกินสิทธิ์สูงสุดต่อครั้ง (${welfare.maxUsed.toLocaleString()} บาท)`);
-      return;
-    }
-
-    if (!formData.description.trim()) {
-      setError("กรุณาระบุรายละเอียด");
+    if (quota?.remainingPerYear !== null && quota?.remainingPerYear !== undefined && requestedAmount > quota.remainingPerYear) {
+      setError(`จำนวนเงินเกินโควตาคงเหลือปีนี้ (${quota.remainingPerYear.toLocaleString()} บาท)`);
       return;
     }
 
@@ -138,13 +197,39 @@ function SubmitClaimForm() {
       return;
     }
 
+    // Validate nights for PER_NIGHT type
+    if (subType.unitType === "PER_NIGHT" && !formData.nights) {
+      setError("กรุณาระบุจำนวนคืนที่เข้าพักรักษา");
+      return;
+    }
+
     try {
       setSubmitting(true);
 
       const submitFormData = new FormData();
-      submitFormData.append("welfareId", welfareId);
-      submitFormData.append("amount", amount.toString());
+      submitFormData.append("welfareSubTypeId", subTypeId);
+      submitFormData.append("requestedAmount", requestedAmount.toString());
       submitFormData.append("description", formData.description);
+
+      if (formData.nights) {
+        submitFormData.append("nights", formData.nights);
+      }
+      if (formData.beneficiaryName) {
+        submitFormData.append("beneficiaryName", formData.beneficiaryName);
+      }
+      submitFormData.append("beneficiaryRelation", formData.beneficiaryRelation);
+      if (formData.incidentDate) {
+        submitFormData.append("incidentDate", formData.incidentDate);
+      }
+      if (formData.hospitalName) {
+        submitFormData.append("hospitalName", formData.hospitalName);
+      }
+      if (formData.admissionDate) {
+        submitFormData.append("admissionDate", formData.admissionDate);
+      }
+      if (formData.dischargeDate) {
+        submitFormData.append("dischargeDate", formData.dischargeDate);
+      }
 
       formData.files.forEach((file) => {
         submitFormData.append("files", file);
@@ -171,15 +256,22 @@ function SubmitClaimForm() {
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("th-TH", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   if (status === "loading" || loading) {
     return <PageLoading text="กำลังโหลด..." fullScreen />;
   }
 
-  if (!welfare) {
+  if (!subType) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400">{error || "ไม่พบข้อมูลสวัสดิการ"}</p>
+          <p className="text-red-600 dark:text-red-400">{error || "ไม่พบข้อมูลประเภทสวัสดิการ"}</p>
           <Link
             href="/welfare"
             className="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline"
@@ -192,62 +284,95 @@ function SubmitClaimForm() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="mb-8">
+      <div>
         <Link
           href="/welfare"
-          className="text-blue-600 dark:text-blue-400 hover:underline mb-4 inline-block"
+          className="text-brand-600 dark:text-brand-400 hover:underline mb-4 inline-flex items-center gap-1"
         >
-          ← กลับ
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          กลับ
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          ยื่นคำร้อง - {welfare.name}
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          ยื่นคำร้อง - {subType.welfareType.name}
         </h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          กรุณากรอกข้อมูลและแนบเอกสารประกอบ
+        <p className="mt-1 text-gray-600 dark:text-gray-400">
+          {subType.name}
         </p>
       </div>
 
       {/* Welfare Info */}
-      <div className="mb-6 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+      <div className="rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
           ข้อมูลสวัสดิการ
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">วงเงินรวม</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {welfare.budget.toLocaleString()} บาท
+            <p className="text-gray-600 dark:text-gray-400">จำนวนเงิน</p>
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {formatCurrency(subType.amount)} บาท
+              {subType.unitType === "PER_NIGHT" && "/คืน"}
+              {subType.unitType === "PER_INCIDENT" && "/ครั้ง"}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">สิทธิ์สูงสุด/คน</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {welfare.maxUsed.toLocaleString()} บาท
+            <p className="text-gray-600 dark:text-gray-400">วิธีคำนวณ</p>
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {unitTypeLabels[subType.unitType]}
             </p>
           </div>
+          {subType.maxPerRequest && (
+            <div>
+              <p className="text-gray-600 dark:text-gray-400">สูงสุด/ครั้ง</p>
+              <p className="font-semibold text-gray-900 dark:text-white">
+                {formatCurrency(subType.maxPerRequest)} บาท
+              </p>
+            </div>
+          )}
+          {subType.maxPerYear && (
+            <div>
+              <p className="text-gray-600 dark:text-gray-400">สูงสุด/ปี</p>
+              <p className="font-semibold text-gray-900 dark:text-white">
+                {formatCurrency(subType.maxPerYear)} บาท
+              </p>
+            </div>
+          )}
+          {subType.maxClaimsLifetime && (
+            <div>
+              <p className="text-gray-600 dark:text-gray-400">เบิกได้</p>
+              <p className="font-semibold text-gray-900 dark:text-white">
+                {subType.maxClaimsLifetime} ครั้งตลอดชีพ
+              </p>
+            </div>
+          )}
           {quota && (
             <>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">ใช้ไปแล้ว</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {quota.usedAmount.toLocaleString()} บาท
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">คงเหลือ</p>
-                <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                  {quota.remainingAmount.toLocaleString()} บาท
-                </p>
-              </div>
+              {quota.remainingPerYear !== null && (
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400">คงเหลือปีนี้</p>
+                  <p className={`font-semibold ${quota.remainingPerYear > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                    {formatCurrency(quota.remainingPerYear)} บาท
+                  </p>
+                </div>
+              )}
+              {quota.remainingClaimsLifetime !== null && (
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400">เหลือสิทธิ์</p>
+                  <p className={`font-semibold ${quota.remainingClaimsLifetime > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                    {quota.remainingClaimsLifetime} ครั้ง
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Error Message */}
         {error && (
           <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -255,52 +380,183 @@ function SubmitClaimForm() {
           </div>
         )}
 
+        {/* Nights Input - Only for PER_NIGHT type */}
+        {subType.unitType === "PER_NIGHT" && (
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              จำนวนคืนที่เข้าพักรักษา <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={formData.nights}
+              onChange={(e) => setFormData({ ...formData, nights: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+              placeholder="จำนวนคืน"
+              required
+            />
+            <div className="mt-2 grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  วันที่เข้ารับการรักษา
+                </label>
+                <input
+                  type="date"
+                  value={formData.admissionDate}
+                  onChange={(e) => setFormData({ ...formData, admissionDate: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  วันที่ออกจากโรงพยาบาล
+                </label>
+                <input
+                  type="date"
+                  value={formData.dischargeDate}
+                  onChange={(e) => setFormData({ ...formData, dischargeDate: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+            </div>
+            <div className="mt-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                ชื่อโรงพยาบาล
+              </label>
+              <input
+                type="text"
+                value={formData.hospitalName}
+                onChange={(e) => setFormData({ ...formData, hospitalName: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+                placeholder="ชื่อโรงพยาบาล"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Beneficiary Info - For certain welfare types */}
+        {(subType.welfareType.code === "FUNERAL" || subType.welfareType.code === "NEWBORN") && (
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
+            <h4 className="font-medium text-gray-800 dark:text-white mb-3">ข้อมูลผู้รับสิทธิ์</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  ชื่อ-นามสกุล {subType.welfareType.code === "FUNERAL" ? "ผู้เสียชีวิต" : "บุตร"}
+                </label>
+                <input
+                  type="text"
+                  value={formData.beneficiaryName}
+                  onChange={(e) => setFormData({ ...formData, beneficiaryName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+                  placeholder="ชื่อ-นามสกุล"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  ความสัมพันธ์
+                </label>
+                <select
+                  value={formData.beneficiaryRelation}
+                  onChange={(e) => setFormData({ ...formData, beneficiaryRelation: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+                >
+                  <option value="SELF">ตนเอง</option>
+                  <option value="SPOUSE">คู่สมรส</option>
+                  <option value="CHILD">บุตร</option>
+                  <option value="FATHER">บิดา</option>
+                  <option value="MOTHER">มารดา</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Incident Date - For certain welfare types */}
+        {(subType.welfareType.code === "FUNERAL" || subType.welfareType.code === "DISASTER" || subType.welfareType.code === "MARRIAGE") && (
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              วันที่เกิดเหตุการณ์
+            </label>
+            <input
+              type="date"
+              value={formData.incidentDate}
+              onChange={(e) => setFormData({ ...formData, incidentDate: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+        )}
+
         {/* Amount */}
-        <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             จำนวนเงินที่ขอ <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
               type="number"
-              step="0.01"
+              step="1"
               min="0"
-              max={Math.min(welfare.maxUsed, quota?.remainingAmount || welfare.maxUsed)}
-              value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              placeholder="0.00"
+              value={formData.requestedAmount}
+              onChange={(e) => setFormData({ ...formData, requestedAmount: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+              placeholder="0"
+              readOnly={subType.unitType === "LUMP_SUM"}
               required
             />
             <span className="absolute right-4 top-2.5 text-gray-500 dark:text-gray-400">บาท</span>
           </div>
-          {quota && (
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              คงเหลือ: {quota.remainingAmount.toLocaleString()} บาท
+          {subType.unitType === "LUMP_SUM" && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              * จำนวนเงินคงที่ตามประเภทสวัสดิการ
+            </p>
+          )}
+          {subType.unitType === "PER_NIGHT" && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              * คำนวณจากจำนวนคืน × {formatCurrency(subType.amount)} บาท (สูงสุด {subType.maxPerRequest ? formatCurrency(subType.maxPerRequest) : "-"} บาท/ครั้ง)
             </p>
           )}
         </div>
 
         {/* Description */}
-        <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            รายละเอียดคำร้อง <span className="text-red-500">*</span>
+            รายละเอียดเพิ่มเติม
           </label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            rows={5}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            placeholder="กรุณาระบุรายละเอียดคำร้อง เช่น เหตุผล วัตถุประสงค์ ฯลฯ"
-            required
+            rows={3}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+            placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"
           />
         </div>
 
-        {/* File Upload */}
-        <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+        {/* Required Documents */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             แนบเอกสารประกอบ <span className="text-red-500">*</span>
           </label>
+          
+          {/* Required Documents List */}
+          {subType.welfareType.requiredDocuments.length > 0 && (
+            <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300 mb-2">
+                เอกสารที่ต้องแนบ:
+              </p>
+              <ul className="text-sm text-amber-700 dark:text-amber-400 space-y-1">
+                {subType.welfareType.requiredDocuments.map((doc) => (
+                  <li key={doc.id} className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {doc.name}
+                    {doc.isRequired && <span className="text-red-500">*</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
             รองรับไฟล์: PDF, Word, Excel, รูปภาพ (สูงสุด 10MB/ไฟล์)
           </p>
@@ -309,7 +565,7 @@ function SubmitClaimForm() {
             multiple
             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
             onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-300"
+            className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900 dark:file:text-brand-300"
           />
           
           {/* File List */}
@@ -318,7 +574,7 @@ function SubmitClaimForm() {
               {formData.files.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
                     <svg
@@ -374,7 +630,7 @@ function SubmitClaimForm() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center space-x-2"
+            className="px-6 py-2 bg-brand-500 hover:bg-brand-600 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center space-x-2"
           >
             {submitting ? (
               <>
@@ -393,7 +649,7 @@ function SubmitClaimForm() {
 
 export default function SubmitClaimPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<PageLoading text="กำลังโหลด..." />}>
       <SubmitClaimForm />
     </Suspense>
   );

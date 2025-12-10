@@ -43,7 +43,11 @@ export async function POST(
       where: { id: claimId },
       include: {
         user: true,
-        welfare: true,
+        welfareSubType: {
+          include: {
+            welfareType: true,
+          },
+        },
       },
     });
 
@@ -86,7 +90,7 @@ export async function POST(
         userId: claim.userId,
         type: "CLAIM_APPROVED",
         title: "คำร้องได้รับการอนุมัติจาก Admin",
-        message: `คำร้อง ${claim.welfare.name} จำนวน ${claim.amount} บาท ได้รับการอนุมัติจาก Admin แล้ว รอการอนุมัติจาก Manager`,
+        message: `คำร้อง ${claim.welfareSubType.welfareType.name} - ${claim.welfareSubType.name} จำนวน ${claim.requestedAmount} บาท ได้รับการอนุมัติจาก Admin แล้ว รอการอนุมัติจาก Manager`,
         relatedClaimId: claimId,
       },
     });
@@ -104,12 +108,14 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: "Claim approved by admin successfully",
-      claim: updatedClaim,
+      data: {
+        claim: updatedClaim,
+      },
     });
   } catch (error) {
     console.error("Admin approve claim error:", error);
     return NextResponse.json(
-      { error: "Failed to approve claim" },
+      { success: false, error: "Failed to approve claim" },
       { status: 500 }
     );
   }

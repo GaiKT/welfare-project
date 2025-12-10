@@ -7,7 +7,6 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 
 export default function ForgotPasswordPage() {
-  const _router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [userType, setUserType] = useState<"admin" | "user">("admin");

@@ -35,12 +35,32 @@ export async function GET(
             phone: true,
           },
         },
-        welfare: {
+        welfareSubType: {
           select: {
             id: true,
+            code: true,
             name: true,
-            description: true,
-            maxUsed: true,
+            amount: true,
+            unitType: true,
+            maxPerRequest: true,
+            maxPerYear: true,
+            maxLifetime: true,
+            maxClaimsLifetime: true,
+            welfareType: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                requiredDocuments: {
+                  select: {
+                    id: true,
+                    name: true,
+                    isRequired: true,
+                  },
+                  orderBy: { sortOrder: "asc" },
+                },
+              },
+            },
           },
         },
         documents: {
@@ -117,12 +137,14 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      claim,
+      data: {
+        claim,
+      },
     });
   } catch (error) {
     console.error("Get claim detail error:", error);
     return NextResponse.json(
-      { error: "Failed to get claim details" },
+      { success: false, error: "Failed to get claim details" },
       { status: 500 }
     );
   }
@@ -143,10 +165,10 @@ export async function PUT(
     }
 
     const data = await request.json();
-    const { status, amount } = data;
+    const { status, requestedAmount, approvedAmount } = data;
 
     // Check if claim exists
-    const whereClause: any = { id };
+    const whereClause: Record<string, unknown> = { id };
 
     // Users can only update their own pending claims
     if (user.userType === UserType.USER) {
@@ -157,7 +179,7 @@ export async function PUT(
     const existingClaim = await prisma.welfareClaims.findFirst({
       where: whereClause,
       include: {
-        welfare: true,
+        welfareSubType: true,
       },
     });
 
@@ -170,29 +192,30 @@ export async function PUT(
 
     const updateData: Record<string, unknown> = {};
 
-    // Users can only update amount of pending claims
+    // Users can only update requestedAmount of pending claims
     if (user.userType === UserType.USER) {
-      if (amount !== undefined) {
-        if (amount <= 0) {
+      if (requestedAmount !== undefined) {
+        if (requestedAmount <= 0) {
           return NextResponse.json(
             { error: "Amount must be a positive number" },
             { status: 400 }
           );
         }
 
-        if (amount > existingClaim.welfare.maxUsed) {
+        const subType = existingClaim.welfareSubType;
+        if (subType.maxPerRequest && requestedAmount > subType.maxPerRequest) {
           return NextResponse.json(
             { 
-              error: `Amount exceeds maximum allowed (${existingClaim.welfare.maxUsed})` 
+              error: `Amount exceeds maximum allowed per request (${subType.maxPerRequest})` 
             },
             { status: 400 }
           );
         }
 
-        updateData.amount = amount;
+        updateData.requestedAmount = requestedAmount;
       }
     } else {
-      // Admins can update both status and amount
+      // Admins can update status and approvedAmount
       if (status !== undefined) {
         if (!["PENDING", "IN_REVIEW", "ADMIN_APPROVED", "MANAGER_APPROVED", "REJECTED", "COMPLETED"].includes(status)) {
           return NextResponse.json(
@@ -203,24 +226,14 @@ export async function PUT(
         updateData.status = status;
       }
 
-      if (amount !== undefined) {
-        if (amount <= 0) {
+      if (approvedAmount !== undefined) {
+        if (approvedAmount < 0) {
           return NextResponse.json(
-            { error: "Amount must be a positive number" },
+            { error: "Approved amount cannot be negative" },
             { status: 400 }
           );
         }
-
-        if (amount > existingClaim.welfare.maxUsed) {
-          return NextResponse.json(
-            { 
-              error: `Amount exceeds maximum allowed (${existingClaim.welfare.maxUsed})` 
-            },
-            { status: 400 }
-          );
-        }
-
-        updateData.amount = amount;
+        updateData.approvedAmount = approvedAmount;
       }
     }
 
@@ -235,19 +248,30 @@ export async function PUT(
             lastName: true,
           },
         },
-        welfare: {
+        welfareSubType: {
           select: {
             name: true,
+            welfareType: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
     });
 
-    return NextResponse.json({ claim });
+    return NextResponse.json({ 
+      success: true,
+      message: "Claim updated successfully",
+      data: {
+        claim,
+      },
+    });
   } catch (error) {
     console.error("Error updating claim:", error);
     return NextResponse.json(
-      { error: "Failed to update claim" },
+      { success: false, error: "Failed to update claim" },
       { status: 500 }
     );
   }
@@ -267,7 +291,7 @@ export async function DELETE(
       );
     }
 
-    const whereClause: any = { id };
+    const whereClause: Record<string, unknown> = { id };
 
     // Users can only delete their own pending claims
     if (user.userType === UserType.USER) {
@@ -290,11 +314,14 @@ export async function DELETE(
       where: { id },
     });
 
-    return NextResponse.json({ message: "Claim deleted successfully" });
+    return NextResponse.json({ 
+      success: true,
+      message: "Claim deleted successfully",
+    });
   } catch (error) {
     console.error("Error deleting claim:", error);
     return NextResponse.json(
-      { error: "Failed to delete claim" },
+      { success: false, error: "Failed to delete claim" },
       { status: 500 }
     );
   }

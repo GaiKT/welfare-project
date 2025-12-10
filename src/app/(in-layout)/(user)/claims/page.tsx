@@ -8,12 +8,16 @@ import { PageLoading, Loading } from "@/components/ui/loading";
 
 interface Claim {
   id: string;
-  welfare: {
+  welfareSubType: {
     name: string;
+    welfareType: {
+      name: string;
+    };
   };
-  amount: number;
+  requestedAmount: number;
+  approvedAmount: number | null;
   status: string;
-  description: string;
+  description: string | null;
   createdAt: string;
   _count: {
     documents: number;
@@ -98,8 +102,10 @@ export default function MyClaimsPage() {
 
       const response = await fetch(`/api/claims?${params.toString()}`);
       if (response.ok) {
-        const data = await response.json();
-        setClaims(data.claims || []);
+        const result = await response.json();
+        if (result.success) {
+          setClaims(result.data?.claims || []);
+        }
       }
     } catch (error) {
       console.error("Error fetching claims:", error);
@@ -278,13 +284,13 @@ export default function MyClaimsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <h3 className="text-base font-semibold text-gray-800 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                          {claim.welfare.name}
+                          {claim.welfareSubType.welfareType.name} - {claim.welfareSubType.name}
                         </h3>
                         {getStatusBadge(claim.status)}
                       </div>
                       
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-1">
-                        {claim.description}
+                        {claim.description || "-"}
                       </p>
 
                       <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -292,13 +298,18 @@ export default function MyClaimsPage() {
                           <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="font-medium">{claim.amount.toLocaleString()}</span> บาท
+                          <span className="font-medium">{claim.requestedAmount.toLocaleString()}</span> บาท
+                          {claim.approvedAmount && claim.approvedAmount !== claim.requestedAmount && (
+                            <span className="text-emerald-600 dark:text-emerald-400">
+                              (อนุมัติ {claim.approvedAmount.toLocaleString()} บาท)
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
                           <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                           </svg>
-                          <span>{claim._count.documents} ไฟล์แนบ</span>
+                          <span>{claim._count?.documents || 0} ไฟล์แนบ</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
                           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentFiscalYear } from "@/lib/fiscal-year";
 import { uploadMultipleFiles } from "@/lib/file-upload";
 import { UserType } from "@/types/auth";
+import { validateWelfareClaim } from "@/lib/welfare-validation";
+import { WelfareUnitType, BeneficiaryRelation } from "@prisma/client";
 
 /**
  * POST /api/claims/submit
@@ -30,44 +32,27 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
-    console.log("Received claim submission:", formData);
-    const welfareId = formData.get("welfareId") as string;
-    const amount = parseFloat(formData.get("amount") as string);
+    console.log("Received claim submission");
+    
+    // Get form fields
+    const welfareSubTypeId = formData.get("welfareSubTypeId") as string;
+    // Also support old field name for backward compatibility
+    const legacyWelfareId = formData.get("welfareId") as string;
+    const subTypeId = welfareSubTypeId || legacyWelfareId;
+    
     const description = formData.get("description") as string;
+    const nights = formData.get("nights") ? parseInt(formData.get("nights") as string) : undefined;
+    const beneficiaryName = formData.get("beneficiaryName") as string;
+    const beneficiaryRelation = formData.get("beneficiaryRelation") as BeneficiaryRelation | undefined;
+    const incidentDateStr = formData.get("incidentDate") as string;
+    const hospitalName = formData.get("hospitalName") as string;
+    const admissionDateStr = formData.get("admissionDate") as string;
+    const dischargeDateStr = formData.get("dischargeDate") as string;
 
     // Validation
-    if (!welfareId || !amount) {
+    if (!subTypeId) {
       return NextResponse.json(
-        { error: "Welfare type and amount are required" },
-        { status: 400 }
-      );
-    }
-
-    if (amount <= 0) {
-      return NextResponse.json(
-        { error: "Amount must be greater than 0" },
-        { status: 400 }
-      );
-    }
-
-    // Get welfare details
-    const welfare = await prisma.welfare.findUnique({
-      where: { id: welfareId },
-    });
-
-    if (!welfare) {
-      return NextResponse.json(
-        { error: "Welfare type not found" },
-        { status: 404 }
-      );
-    }
-
-    // Check if amount exceeds welfare limit
-    if (amount > welfare.maxUsed) {
-      return NextResponse.json(
-        {
-          error: `Amount exceeds maximum allowed (${welfare.maxUsed} per claim)`,
-        },
+        { error: "กรุณาเลือกประเภทสวัสดิการ" },
         { status: 400 }
       );
     }
@@ -75,21 +60,55 @@ export async function POST(request: NextRequest) {
     const fiscalYear = getCurrentFiscalYear();
     const userId = session.user.id;
 
-    // Check remaining quota
-    const quota = await prisma.welfareQuota.findUnique({
-      where: {
-        userId_welfareId_fiscalYear: {
-          userId,
-          welfareId,
-          fiscalYear,
+    // Get welfare sub-type details
+    const welfareSubType = await prisma.welfareSubType.findUnique({
+      where: { id: subTypeId },
+      include: {
+        welfareType: {
+          include: {
+            requiredDocuments: {
+              orderBy: { sortOrder: "asc" },
+            },
+          },
         },
       },
     });
 
-    if (quota && quota.remainingAmount < amount) {
+    if (!welfareSubType) {
       return NextResponse.json(
-        {
-          error: `Insufficient quota. Remaining: ${quota.remainingAmount}, Requested: ${amount}`,
+        { error: "ไม่พบประเภทสวัสดิการที่เลือก" },
+        { status: 404 }
+      );
+    }
+
+    if (!welfareSubType.isActive || !welfareSubType.welfareType.isActive) {
+      return NextResponse.json(
+        { error: "สวัสดิการนี้ไม่เปิดใช้งาน" },
+        { status: 400 }
+      );
+    }
+
+    // For PER_NIGHT (medical) welfare, nights is required
+    if (welfareSubType.unitType === WelfareUnitType.PER_NIGHT && (!nights || nights <= 0)) {
+      return NextResponse.json(
+        { error: "กรุณาระบุจำนวนคืนที่พักรักษาตัว" },
+        { status: 400 }
+      );
+    }
+
+    // Validate claim eligibility
+    const validation = await validateWelfareClaim({
+      userId,
+      welfareSubTypeId: subTypeId,
+      nights,
+      fiscalYear,
+    });
+
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { 
+          error: validation.message || "ไม่สามารถยื่นคำขอได้",
+          errors: validation.errors,
         },
         { status: 400 }
       );
@@ -97,10 +116,31 @@ export async function POST(request: NextRequest) {
 
     // Handle file uploads
     const files: File[] = [];
+    const documentNames: string[] = [];
+    
     for (const [key, value] of formData.entries()) {
-      if (key.startsWith("file") && value instanceof File) {
+      if (key.startsWith("file_") && value instanceof File) {
         files.push(value);
+        // Extract document name from key (e.g., "file_สำเนาบัตรประชาชน" -> "สำเนาบัตรประชาชน")
+        const docName = key.replace("file_", "").replace(/_\d+$/, "");
+        documentNames.push(decodeURIComponent(docName));
+      } else if (key.startsWith("file") && value instanceof File) {
+        // Legacy file upload support
+        files.push(value);
+        documentNames.push("เอกสารแนบ");
       }
+    }
+
+    // Check required documents
+    const requiredDocs = welfareSubType.welfareType.requiredDocuments.filter(d => d.isRequired);
+    if (requiredDocs.length > 0 && files.length < requiredDocs.length) {
+      return NextResponse.json(
+        { 
+          error: `กรุณาแนบเอกสารให้ครบถ้วน (ต้องแนบ ${requiredDocs.length} รายการ)`,
+          requiredDocuments: requiredDocs.map(d => d.name),
+        },
+        { status: 400 }
+      );
     }
 
     let uploadedFiles: Array<{
@@ -109,28 +149,43 @@ export async function POST(request: NextRequest) {
       fileType: string;
       fileSize: number;
     }> = [];
+    
     if (files.length > 0) {
       try {
         uploadedFiles = await uploadMultipleFiles(files, "claims");
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         return NextResponse.json(
-          { error: `File upload failed: ${error.message}` },
+          { error: `การอัพโหลดไฟล์ล้มเหลว: ${errorMessage}` },
           { status: 400 }
         );
       }
     }
 
+    // Parse dates
+    const incidentDate = incidentDateStr ? new Date(incidentDateStr) : null;
+    const admissionDate = admissionDateStr ? new Date(admissionDateStr) : null;
+    const dischargeDate = dischargeDateStr ? new Date(dischargeDateStr) : null;
+
     // Create claim
     const claim = await prisma.welfareClaims.create({
       data: {
         userId,
-        welfareId,
-        amount,
+        welfareSubTypeId: subTypeId,
+        requestedAmount: validation.calculatedAmount,
+        nights: nights || null,
+        beneficiaryName: beneficiaryName || null,
+        beneficiaryRelation: beneficiaryRelation || null,
         description: description || null,
+        incidentDate,
+        hospitalName: hospitalName || null,
+        admissionDate,
+        dischargeDate,
         status: "PENDING",
         fiscalYear,
         documents: {
-          create: uploadedFiles.map((file) => ({
+          create: uploadedFiles.map((file, index) => ({
+            documentName: documentNames[index] || "เอกสารแนบ",
             fileName: file.fileName,
             fileUrl: file.fileUrl,
             fileType: file.fileType,
@@ -140,57 +195,38 @@ export async function POST(request: NextRequest) {
       },
       include: {
         documents: true,
-        welfare: {
-          select: {
-            name: true,
+        welfareSubType: {
+          include: {
+            welfareType: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
     });
 
-    // Create notification for admins (we'll notify all ADMINs and PRIMARY)
-    // const admins = await prisma.admin.findMany({
-    //   where: {
-    //     role: {
-    //       in: ["ADMIN", "PRIMARY"],
-    //     },
-    //     isActive: true,
-    //   },
-    //   select: {
-    //     id: true,
-    //   },
-    // });
-
-    // await Promise.all(
-    //   admins.map((admin) =>
-    //     prisma.notification.create({
-    //       data: {
-    //         userId: admin.id,
-    //         type: "CLAIM_SUBMITTED",
-    //         title: "มีคำร้องใหม่รอการตรวจสอบ",
-    //         message: `${session.user.name} ยื่นคำร้อง ${claim.welfare.name} จำนวน ${claim.amount} บาท`,
-    //         relatedClaimId: claim.id,
-    //       },
-    //     })
-    //   )
-    // );
-
     return NextResponse.json({
       success: true,
-      message: "Claim submitted successfully",
-      claim: {
-        id: claim.id,
-        amount: claim.amount,
-        status: claim.status,
-        welfareName: claim.welfare.name,
-        documentCount: claim.documents.length,
-        submittedDate: claim.submittedDate,
+      message: "ยื่นคำขอสำเร็จ",
+      data:{
+        claim: {
+          id: claim.id,
+          requestedAmount: claim.requestedAmount,
+          nights: claim.nights,
+          status: claim.status,
+          welfareTypeName: claim.welfareSubType.welfareType.name,
+          welfareSubTypeName: claim.welfareSubType.name,
+          documentCount: claim.documents.length,
+          submittedDate: claim.submittedDate,
+        },
       },
     });
   } catch (error) {
     console.error("Submit claim error:", error);
     return NextResponse.json(
-      { error: "Failed to submit claim" },
+      { error: "เกิดข้อผิดพลาดในการยื่นคำขอ" },
       { status: 500 }
     );
   }

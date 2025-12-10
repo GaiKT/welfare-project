@@ -67,14 +67,10 @@ export async function GET() {
       },
     });
 
-    // Get total welfare budget and used amount
-    const welfareStats = await prisma.welfare.aggregate({
-      _sum: {
-        budget: true,
-      },
+    // Get total welfare sub-types count as "budget indicator"
+    const totalSubTypes = await prisma.welfareSubType.count({
+      where: { isActive: true },
     });
-
-    const totalBudget = welfareStats._sum.budget || 0;
 
     // Get total used amount from approved claims in current fiscal year
     const usedAmountStats = await prisma.welfareClaims.aggregate({
@@ -83,13 +79,11 @@ export async function GET() {
         status: { in: ["MANAGER_APPROVED", "COMPLETED"] },
       },
       _sum: {
-        amount: true,
+        approvedAmount: true,
       },
     });
 
-    const usedAmount = usedAmountStats._sum.amount || 0;
-    const budgetUsagePercent =
-      totalBudget > 0 ? ((usedAmount / totalBudget) * 100).toFixed(2) : 0;
+    const usedAmount = usedAmountStats._sum.approvedAmount || 0;
 
     // Get claims by month for current fiscal year
     const claimsByMonth = await prisma.welfareClaims.groupBy({
@@ -121,8 +115,8 @@ export async function GET() {
     });
 
     // Get claims by welfare type
-    const claimsByWelfare = await prisma.welfareClaims.groupBy({
-      by: ["welfareId"],
+    const claimsByWelfareSubType = await prisma.welfareClaims.groupBy({
+      by: ["welfareSubTypeId"],
       where: {
         fiscalYear: currentFiscalYear,
       },
@@ -130,25 +124,33 @@ export async function GET() {
         id: true,
       },
       _sum: {
-        amount: true,
+        approvedAmount: true,
       },
     });
 
-    // Get welfare names
-    const welfareTypes = await prisma.welfare.findMany({
-      select: { id: true, name: true, budget: true },
+    // Get welfare type names
+    const welfareSubTypes = await prisma.welfareSubType.findMany({
+      select: { 
+        id: true, 
+        name: true,
+        welfareType: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
-    const welfareMap = new Map(welfareTypes.map((w) => [w.id, w]));
+    const subTypeMap = new Map(welfareSubTypes.map((w) => [w.id, w]));
 
-    const claimsByWelfareWithNames = claimsByWelfare.map((item) => {
-      const welfare = welfareMap.get(item.welfareId);
+    const claimsByWelfareWithNames = claimsByWelfareSubType.map((item) => {
+      const subType = subTypeMap.get(item.welfareSubTypeId);
       return {
-        welfareId: item.welfareId,
-        welfareName: welfare?.name || "Unknown",
-        budget: welfare?.budget || 0,
+        welfareSubTypeId: item.welfareSubTypeId,
+        welfareTypeName: subType?.welfareType.name || "Unknown",
+        subTypeName: subType?.name || "Unknown",
         claimCount: item._count.id,
-        totalAmount: item._sum.amount || 0,
+        totalAmount: item._sum.approvedAmount || 0,
       };
     });
 
@@ -165,10 +167,15 @@ export async function GET() {
             title: true,
           },
         },
-        welfare: {
+        welfareSubType: {
           select: {
             id: true,
             name: true,
+            welfareType: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
@@ -211,10 +218,8 @@ export async function GET() {
           approvedClaims,
         },
         budget: {
-          totalBudget,
+          totalSubTypes,
           usedAmount,
-          remainingAmount: totalBudget - usedAmount,
-          usagePercent: Number(budgetUsagePercent),
         },
         monthlyClaimsData: monthlyData,
         claimsByStatus: claimsByStatus.map((item) => ({
@@ -225,8 +230,10 @@ export async function GET() {
         recentClaims: recentClaims.map((claim) => ({
           id: claim.id,
           userName: `${claim.user.title} ${claim.user.firstName} ${claim.user.lastName}`,
-          welfareName: claim.welfare.name,
-          amount: claim.amount,
+          welfareTypeName: claim.welfareSubType.welfareType.name,
+          subTypeName: claim.welfareSubType.name,
+          requestedAmount: claim.requestedAmount,
+          approvedAmount: claim.approvedAmount,
           status: claim.status,
           submittedDate: claim.submittedDate,
         })),

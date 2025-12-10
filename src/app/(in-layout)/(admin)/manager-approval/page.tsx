@@ -56,8 +56,10 @@ export default function ManagerApprovalPage() {
       setLoading(true);
       const response = await fetch("/api/claims?status=ADMIN_APPROVED");
       if (response.ok) {
-        const data = await response.json();
-        setClaims(data.claims || []);
+        const result = await response.json();
+        if (result.success) {
+          setClaims(result.data?.claims || []);
+        }
       }
     } catch (error) {
       console.error("Error fetching claims:", error);

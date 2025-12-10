@@ -27,9 +27,14 @@ export async function GET(
         updatedAt: true,
         claims: {
           include: {
-            welfare: {
+            welfareSubType: {
               select: {
                 name: true,
+                welfareType: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
           },

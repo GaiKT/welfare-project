@@ -83,11 +83,11 @@ export default function NotificationDropdown() {
     try {
       setLoading(true);
       const response = await fetch("/api/notifications?limit=10");
-      const data = await response.json();
+      const result = await response.json();
 
-      if (data.success) {
-        setNotifications(data.notifications);
-        setUnreadCount(data.unreadCount);
+      if (result.success && result.data) {
+        setNotifications(result.data.notifications || []);
+        setUnreadCount(result.data.unreadCount || 0);
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
@@ -251,7 +251,7 @@ export default function NotificationDropdown() {
           </div>
         </div>
         <ul className="flex flex-col h-auto overflow-y-auto custom-scrollbar">
-          {loading && notifications.length === 0 ? (
+          {loading && notifications?.length === 0 ? (
             <li className="flex items-center justify-center py-8">
               <div className="flex flex-col items-center gap-2">
                 <svg
@@ -276,7 +276,7 @@ export default function NotificationDropdown() {
                 <span className="text-sm text-gray-500">กำลังโหลด...</span>
               </div>
             </li>
-          ) : notifications.length === 0 ? (
+          ) : notifications?.length === 0 ? (
             <li className="flex flex-col items-center justify-center py-8 text-center">
               <svg
                 className="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600"
@@ -296,7 +296,7 @@ export default function NotificationDropdown() {
               </p>
             </li>
           ) : (
-            notifications.map((notification) => {
+            notifications?.map((notification) => {
               const { icon, color } = getNotificationIcon(notification.type);
               return (
                 <li key={notification.id}>

@@ -52,12 +52,14 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      notification: updatedNotification,
+      data: {
+        notification: updatedNotification,
+      },
     });
   } catch (error) {
     console.error("Update notification error:", error);
     return NextResponse.json(
-      { error: "Failed to update notification" },
+      { success: false, error: "Failed to update notification" },
       { status: 500 }
     );
   }

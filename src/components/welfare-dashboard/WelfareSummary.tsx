@@ -5,9 +5,9 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 
 interface WelfareData {
-  welfareId: string;
-  welfareName: string;
-  budget: number;
+  welfareSubTypeId: string;
+  welfareTypeName: string;
+  subTypeName: string;
   claimCount: number;
   totalAmount: number;
 }
@@ -37,9 +37,9 @@ export default function WelfareSummary({ data }: WelfareSummaryProps) {
   };
 
   // Calculate totals
-  const totalBudget = data.reduce((sum, item) => sum + item.budget, 0);
   const totalClaims = data.reduce((sum, item) => sum + item.claimCount, 0);
   const totalAmount = data.reduce((sum, item) => sum + item.totalAmount, 0);
+  const totalTypes = data.length;
 
   // Get colors for progress bars
   const colors = [
@@ -85,8 +85,8 @@ export default function WelfareSummary({ data }: WelfareSummaryProps) {
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-4 my-6 p-4 rounded-xl bg-gray-50 dark:bg-gray-800">
         <div className="text-center">
-          <p className="text-gray-500 text-theme-xs dark:text-gray-400">งบประมาณรวม</p>
-          <p className="font-semibold text-gray-800 dark:text-white/90">{formatCurrency(totalBudget)}</p>
+          <p className="text-gray-500 text-theme-xs dark:text-gray-400">ประเภททั้งหมด</p>
+          <p className="font-semibold text-gray-800 dark:text-white/90">{totalTypes} ประเภท</p>
         </div>
         <div className="text-center border-x border-gray-200 dark:border-gray-700">
           <p className="text-gray-500 text-theme-xs dark:text-gray-400">คำขอทั้งหมด</p>
@@ -101,21 +101,22 @@ export default function WelfareSummary({ data }: WelfareSummaryProps) {
       <div className="space-y-5">
         {data.length > 0 ? (
           data.map((item, index) => {
-            const usagePercent = item.budget > 0 
-              ? Math.min((item.totalAmount / item.budget) * 100, 100)
+            // Calculate percentage based on proportion of total claims
+            const claimPercent = totalClaims > 0 
+              ? Math.min((item.claimCount / totalClaims) * 100, 100)
               : 0;
             const colorClass = colors[index % colors.length];
 
             return (
-              <div key={item.welfareId} className="flex items-center justify-between">
+              <div key={item.welfareSubTypeId} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-3 h-3 rounded-full ${colorClass}`}></div>
                   <div>
                     <p className="font-semibold text-gray-800 text-theme-sm dark:text-white/90">
-                      {item.welfareName}
+                      {item.welfareTypeName}
                     </p>
                     <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
-                      {item.claimCount} คำขอ • {formatCurrency(item.totalAmount)}
+                      {item.subTypeName} • {item.claimCount} คำขอ • {formatCurrency(item.totalAmount)}
                     </span>
                   </div>
                 </div>
@@ -124,11 +125,11 @@ export default function WelfareSummary({ data }: WelfareSummaryProps) {
                   <div className="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 dark:bg-gray-800">
                     <div
                       className={`absolute left-0 top-0 flex h-full items-center justify-center rounded-sm ${colorClass} text-xs font-medium text-white`}
-                      style={{ width: `${usagePercent}%` }}
+                      style={{ width: `${claimPercent}%` }}
                     ></div>
                   </div>
                   <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                    {usagePercent.toFixed(0)}%
+                    {claimPercent.toFixed(0)}%
                   </p>
                 </div>
               </div>
