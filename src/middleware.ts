@@ -8,6 +8,19 @@ export default withAuth(
     // Use optional chaining because `nextauth` may be undefined
     const token = req.nextauth?.token;
 
+    // Handle CORS preflight requests
+    if (req.method === "OPTIONS") {
+      return new NextResponse(null, {
+        status: 200,
+        headers: {
+          "Access-Control-Allow-Origin": process.env.NEXTAUTH_URL || "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version",
+          "Access-Control-Allow-Credentials": "true",
+        },
+      });
+    }
+
     // Check if user must change password (first login)
     if (token?.mustChangePassword) {
       // Allow access to reset-password page and auth APIs

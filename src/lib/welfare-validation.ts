@@ -75,7 +75,7 @@ export async function validateWelfareClaim(
   }
 
   // Get or create quota tracking
-  let quota = await prisma.welfareQuota.findUnique({
+  const quota = await prisma.welfareQuota.findUnique({
     where: {
       userId_welfareSubTypeId_fiscalYear: {
         userId,

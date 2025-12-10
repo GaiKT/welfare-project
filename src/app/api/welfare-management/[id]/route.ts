@@ -114,20 +114,20 @@ export async function PUT(
     }
 
     // Update welfare type
-    const welfareType = await prisma.welfareType.update({
-      where: { id },
-      data: {
-        code: code || existingWelfare.code,
-        name,
-        description: description || null,
-        isActive: isActive !== undefined ? isActive : existingWelfare.isActive,
-        sortOrder: sortOrder !== undefined ? sortOrder : existingWelfare.sortOrder,
-      },
-      include: {
-        subTypes: true,
-        requiredDocuments: true,
-      },
-    });
+    // const welfareType = await prisma.welfareType.update({
+    //   where: { id },
+    //   data: {
+    //     code: code || existingWelfare.code,
+    //     name,
+    //     description: description || null,
+    //     isActive: isActive !== undefined ? isActive : existingWelfare.isActive,
+    //     sortOrder: sortOrder !== undefined ? sortOrder : existingWelfare.sortOrder,
+    //   },
+    //   include: {
+    //     subTypes: true,
+    //     requiredDocuments: true,
+    //   },
+    // });
 
     // Update sub-types if provided
     if (subTypes && Array.isArray(subTypes)) {
