@@ -13,6 +13,7 @@ import {
   HorizontaLDots,
   ListIcon,
   UserCircleIcon,
+  MailIcon,
 } from "../icons/index";
 
 type NavItem = {
@@ -97,6 +98,12 @@ const othersItems: NavItem[] = [
     ],
     roles: [UserType.ADMIN], // Admin only
   },
+  {
+    icon: <MailIcon />,
+    name: "การแจ้งเตือน",
+    path: "/notifications",
+    roles: [UserType.USER, UserType.MANAGER, UserType.ADMIN],
+  }
 ];
 
 const AppSidebar: React.FC = () => {

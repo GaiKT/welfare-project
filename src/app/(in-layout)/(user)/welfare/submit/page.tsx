@@ -6,6 +6,29 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { PageLoading, InlineLoading } from "@/components/ui/loading";
 import { toast } from "react-toastify";
+import {
+  ArrowLeft,
+  Briefcase,
+  Wallet,
+  Calculator,
+  Calendar,
+  Clock,
+  Building2,
+  Heart,
+  User,
+  FileText,
+  Upload,
+  X,
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+  Send,
+  FileImage,
+  FileSpreadsheet,
+  File,
+  MessageSquare,
+  CreditCard,
+} from "lucide-react";
 
 interface RequiredDocument {
   id: string;
@@ -168,6 +191,22 @@ function SubmitClaimForm() {
     }));
   };
 
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes("pdf")) {
+      return <FileText className="w-5 h-5 text-red-500" />;
+    }
+    if (fileType.includes("word") || fileType.includes("document")) {
+      return <FileText className="w-5 h-5 text-blue-500" />;
+    }
+    if (fileType.includes("sheet") || fileType.includes("excel")) {
+      return <FileSpreadsheet className="w-5 h-5 text-green-500" />;
+    }
+    if (fileType.includes("image")) {
+      return <FileImage className="w-5 h-5 text-purple-500" />;
+    }
+    return <File className="w-5 h-5 text-gray-500" />;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -273,12 +312,14 @@ function SubmitClaimForm() {
   if (!subType) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-red-600 dark:text-red-400">{error || "ไม่พบข้อมูลประเภทสวัสดิการ"}</p>
+        <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 dark:text-red-400 text-lg font-medium">{error || "ไม่พบข้อมูลประเภทสวัสดิการ"}</p>
           <Link
             href="/welfare"
-            className="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline"
+            className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
+            <ArrowLeft className="w-4 h-4" />
             กลับไปหน้ารายการสวัสดิการ
           </Link>
         </div>
@@ -287,181 +328,239 @@ function SubmitClaimForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Header */}
-      <div>
+      <div className="mb-8">
         <Link
           href="/welfare"
-          className="text-brand-600 dark:text-brand-400 hover:underline mb-4 inline-flex items-center gap-1"
+          className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors mb-4"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          กลับ
+          <ArrowLeft className="w-4 h-4" />
+          ย้อนกลับ
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          ยื่นคำร้อง - {subType.welfareType.name}
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl text-white">
+            <Send className="w-6 h-6" />
+          </div>
+          ยื่นคำร้องสวัสดิการ
         </h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">
-          {subType.name}
+        <p className="mt-2 text-gray-600 dark:text-gray-400">
+          {subType.welfareType.name} - {subType.name}
         </p>
       </div>
 
-      {/* Welfare Info */}
-      <div className="rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+      {/* Welfare Info Card */}
+      <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <Briefcase className="w-5 h-5 text-blue-500" />
           ข้อมูลสวัสดิการ
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-gray-600 dark:text-gray-400">จำนวนเงิน</p>
-            <p className="font-semibold text-gray-900 dark:text-white">
-              {formatCurrency(subType.amount)} บาท
-              {subType.unitType === "PER_NIGHT" && "/คืน"}
-              {subType.unitType === "PER_INCIDENT" && "/ครั้ง"}
+        </h2>
+        <div className="grid grid-cols-4 gap-4">
+          {/* Amount */}
+          <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border-l-4 border-blue-500 col-span-4 md:col-span-2">
+            <label className="text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1">
+              <Wallet className="w-4 h-4" />
+              จำนวนเงิน
+            </label>
+            <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+              {formatCurrency(subType.amount)} <span className="text-sm font-normal">บาท</span>
+              {subType.unitType === "PER_NIGHT" && <span className="text-sm font-normal">/คืน</span>}
+              {subType.unitType === "PER_INCIDENT" && <span className="text-sm font-normal">/ครั้ง</span>}
             </p>
           </div>
-          <div>
-            <p className="text-gray-600 dark:text-gray-400">วิธีคำนวณ</p>
-            <p className="font-semibold text-gray-900 dark:text-white">
+
+          {/* Calculation Method */}
+          <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl col-span-4 md:col-span-2">
+            <label className="text-sm font-medium text-purple-600 dark:text-purple-400 flex items-center gap-1">
+              <Calculator className="w-4 h-4" />
+              วิธีคำนวณ
+            </label>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
               {unitTypeLabels[subType.unitType]}
             </p>
           </div>
+
+          {/* Max Per Request */}
           {subType.maxPerRequest && (
-            <div>
-              <p className="text-gray-600 dark:text-gray-400">สูงสุด/ครั้ง</p>
-              <p className="font-semibold text-gray-900 dark:text-white">
-                {formatCurrency(subType.maxPerRequest)} บาท
+            <div className="p-4 bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-xl col-span-4 md:col-span-2">
+              <label className="text-sm font-medium text-cyan-600 dark:text-cyan-400 flex items-center gap-1">
+                <CreditCard className="w-4 h-4" />
+                สูงสุด/ครั้ง
+              </label>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
+                {formatCurrency(subType.maxPerRequest)} <span className="text-sm font-normal">บาท</span>
               </p>
             </div>
           )}
+
+          {/* Max Per Year */}
           {subType.maxPerYear && (
-            <div>
-              <p className="text-gray-600 dark:text-gray-400">สูงสุด/ปี</p>
-              <p className="font-semibold text-gray-900 dark:text-white">
-                {formatCurrency(subType.maxPerYear)} บาท
+            <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl col-span-4 md:col-span-2">
+              <label className="text-sm font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                สูงสุด/ปี
+              </label>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
+                {formatCurrency(subType.maxPerYear)} <span className="text-sm font-normal">บาท</span>
               </p>
             </div>
           )}
+
+          {/* Max Claims Lifetime */}
           {subType.maxClaimsLifetime && (
-            <div>
-              <p className="text-gray-600 dark:text-gray-400">เบิกได้</p>
-              <p className="font-semibold text-gray-900 dark:text-white">
-                {subType.maxClaimsLifetime} ครั้งตลอดชีพ
+            <div className="p-4 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 rounded-xl col-span-4 md:col-span-2">
+              <label className="text-sm font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                เบิกได้ตลอดชีพ
+              </label>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
+                {subType.maxClaimsLifetime} <span className="text-sm font-normal">ครั้ง</span>
               </p>
             </div>
           )}
-          {quota && (
-            <>
+        </div>
+
+        {/* Quota Info */}
+        {quota && (
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+              <Info className="w-4 h-4 text-indigo-500" />
+              โควตาคงเหลือของคุณ
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {quota.remainingPerYear !== null && (
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400">คงเหลือปีนี้</p>
-                  <p className={`font-semibold ${quota.remainingPerYear > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                <div className={`p-3 rounded-xl ${quota.remainingPerYear > 0 ? "bg-emerald-50 dark:bg-emerald-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
+                  <p className={`text-sm ${quota.remainingPerYear > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                    คงเหลือปีนี้
+                  </p>
+                  <p className={`text-lg font-bold ${quota.remainingPerYear > 0 ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`}>
                     {formatCurrency(quota.remainingPerYear)} บาท
                   </p>
                 </div>
               )}
               {quota.remainingClaimsLifetime !== null && (
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400">เหลือสิทธิ์</p>
-                  <p className={`font-semibold ${quota.remainingClaimsLifetime > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                <div className={`p-3 rounded-xl ${quota.remainingClaimsLifetime > 0 ? "bg-emerald-50 dark:bg-emerald-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
+                  <p className={`text-sm ${quota.remainingClaimsLifetime > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                    เหลือสิทธิ์
+                  </p>
+                  <p className={`text-lg font-bold ${quota.remainingClaimsLifetime > 0 ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`}>
                     {quota.remainingClaimsLifetime} ครั้ง
                   </p>
                 </div>
               )}
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Error Message */}
         {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <div className="p-4 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border border-red-200 dark:border-red-800 rounded-2xl flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <p className="text-red-700 dark:text-red-400">{error}</p>
           </div>
         )}
 
         {/* Nights Input - Only for PER_NIGHT type */}
         {subType.unitType === "PER_NIGHT" && (
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              จำนวนคืนที่เข้าพักรักษา <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              min="1"
-              value={formData.nights}
-              onChange={(e) => setFormData({ ...formData, nights: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
-              placeholder="จำนวนคืน"
-              required
-            />
-            <div className="mt-2 grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  วันที่เข้ารับการรักษา
+          <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-teal-500" />
+              ข้อมูลการรักษาพยาบาล
+            </h3>
+            <div className="space-y-4">
+              <div className="p-4 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-xl">
+                <label className="block text-sm font-medium text-teal-700 dark:text-teal-300 mb-2 flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  จำนวนคืนที่เข้าพักรักษา <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="date"
-                  value={formData.admissionDate}
-                  onChange={(e) => setFormData({ ...formData, admissionDate: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+                  type="number"
+                  min="1"
+                  value={formData.nights}
+                  onChange={(e) => setFormData({ ...formData, nights: e.target.value })}
+                  className="w-full px-4 py-3 border border-teal-200 dark:border-teal-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                  placeholder="จำนวนคืน"
+                  required
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    วันที่เข้ารับการรักษา
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.admissionDate}
+                    onChange={(e) => setFormData({ ...formData, admissionDate: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    วันที่ออกจากโรงพยาบาล
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.dischargeDate}
+                    onChange={(e) => setFormData({ ...formData, dischargeDate: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  วันที่ออกจากโรงพยาบาล
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                  <Building2 className="w-4 h-4" />
+                  ชื่อโรงพยาบาล
                 </label>
                 <input
-                  type="date"
-                  value={formData.dischargeDate}
-                  onChange={(e) => setFormData({ ...formData, dischargeDate: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+                  type="text"
+                  value={formData.hospitalName}
+                  onChange={(e) => setFormData({ ...formData, hospitalName: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                  placeholder="ชื่อโรงพยาบาล"
                 />
               </div>
-            </div>
-            <div className="mt-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                ชื่อโรงพยาบาล
-              </label>
-              <input
-                type="text"
-                value={formData.hospitalName}
-                onChange={(e) => setFormData({ ...formData, hospitalName: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
-                placeholder="ชื่อโรงพยาบาล"
-              />
             </div>
           </div>
         )}
 
         {/* Beneficiary Info - For certain welfare types */}
         {(subType.welfareType.code === "FUNERAL" || subType.welfareType.code === "NEWBORN") && (
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
-            <h4 className="font-medium text-gray-800 dark:text-white mb-3">ข้อมูลผู้รับสิทธิ์</h4>
+          <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Heart className="w-5 h-5 text-rose-500" />
+              ข้อมูลผู้รับสิทธิ์
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <div className="p-4 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 rounded-xl">
+                <label className="block text-sm font-medium text-rose-700 dark:text-rose-300 mb-2 flex items-center gap-1">
+                  <User className="w-4 h-4" />
                   ชื่อ-นามสกุล {subType.welfareType.code === "FUNERAL" ? "ผู้เสียชีวิต" : "บุตร"}
                 </label>
                 <input
                   type="text"
                   value={formData.beneficiaryName}
                   onChange={(e) => setFormData({ ...formData, beneficiaryName: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 border border-rose-200 dark:border-rose-700 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
                   placeholder="ชื่อ-นามสกุล"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <div className="p-4 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 rounded-xl">
+                <label className="block text-sm font-medium text-rose-700 dark:text-rose-300 mb-2 flex items-center gap-1">
+                  <Heart className="w-4 h-4" />
                   ความสัมพันธ์
                 </label>
                 <select
                   value={formData.beneficiaryRelation}
                   onChange={(e) => setFormData({ ...formData, beneficiaryRelation: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-4 py-3 border border-rose-200 dark:border-rose-700 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
                 >
                   <option value="SELF">ตนเอง</option>
                   <option value="SPOUSE">คู่สมรส</option>
@@ -476,125 +575,146 @@ function SubmitClaimForm() {
 
         {/* Incident Date - For certain welfare types */}
         {(subType.welfareType.code === "FUNERAL" || subType.welfareType.code === "DISASTER" || subType.welfareType.code === "MARRIAGE") && (
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              วันที่เกิดเหตุการณ์
-            </label>
-            <input
-              type="date"
-              value={formData.incidentDate}
-              onChange={(e) => setFormData({ ...formData, incidentDate: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
-            />
+          <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl">
+              <label className="block text-sm font-medium text-amber-700 dark:text-amber-300 mb-2 flex items-center gap-1">
+                <AlertTriangle className="w-4 h-4" />
+                วันที่เกิดเหตุการณ์
+              </label>
+              <input
+                type="date"
+                value={formData.incidentDate}
+                onChange={(e) => setFormData({ ...formData, incidentDate: e.target.value })}
+                className="w-full px-4 py-3 border border-amber-200 dark:border-amber-700 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+              />
+            </div>
           </div>
         )}
 
         {/* Amount */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            จำนวนเงินที่ขอ <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              step="1"
-              min="0"
-              value={formData.requestedAmount}
-              onChange={(e) => setFormData({ ...formData, requestedAmount: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
-              placeholder="0"
-              readOnly={subType.unitType === "LUMP_SUM"}
-              required
-            />
-            <span className="absolute right-4 top-2.5 text-gray-500 dark:text-gray-400">บาท</span>
+        <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-blue-500" />
+            จำนวนเงินที่ขอ
+          </h3>
+          <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border-l-4 border-blue-500">
+            <label className="block text-sm font-medium text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-1">
+              <CreditCard className="w-4 h-4" />
+              จำนวนเงิน <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                step="1"
+                min="0"
+                value={formData.requestedAmount}
+                onChange={(e) => setFormData({ ...formData, requestedAmount: e.target.value })}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all text-xl font-semibold ${
+                  subType.unitType === "LUMP_SUM" 
+                    ? "bg-gray-100 dark:bg-gray-600 border-gray-200 dark:border-gray-600 cursor-not-allowed"
+                    : "border-blue-200 dark:border-blue-700"
+                }`}
+                placeholder="0"
+                readOnly={subType.unitType === "LUMP_SUM"}
+                required
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-medium">บาท</span>
+            </div>
+            {subType.unitType === "LUMP_SUM" && (
+              <p className="mt-2 text-sm text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <Info className="w-4 h-4" />
+                จำนวนเงินคงที่ตามประเภทสวัสดิการ
+              </p>
+            )}
+            {subType.unitType === "PER_NIGHT" && (
+              <p className="mt-2 text-sm text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <Calculator className="w-4 h-4" />
+                คำนวณจากจำนวนคืน × {formatCurrency(subType.amount)} บาท {subType.maxPerRequest ? `(สูงสุด ${formatCurrency(subType.maxPerRequest)} บาท/ครั้ง)` : ""}
+              </p>
+            )}
           </div>
-          {subType.unitType === "LUMP_SUM" && (
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              * จำนวนเงินคงที่ตามประเภทสวัสดิการ
-            </p>
-          )}
-          {subType.unitType === "PER_NIGHT" && (
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              * คำนวณจากจำนวนคืน × {formatCurrency(subType.amount)} บาท (สูงสุด {subType.maxPerRequest ? formatCurrency(subType.maxPerRequest) : "-"} บาท/ครั้ง)
-            </p>
-          )}
         </div>
 
         {/* Description */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-purple-500" />
             รายละเอียดเพิ่มเติม
-          </label>
+          </h3>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-800 dark:text-white"
+            className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all resize-none"
             placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"
           />
         </div>
 
         {/* Required Documents */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-orange-500" />
             แนบเอกสารประกอบ <span className="text-red-500">*</span>
-          </label>
+          </h3>
           
           {/* Required Documents List */}
           {subType.welfareType.requiredDocuments.length > 0 && (
-            <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-300 mb-2">
+            <div className="mb-4 p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-3 flex items-center gap-2">
+                <Info className="w-4 h-4" />
                 เอกสารที่ต้องแนบ:
               </p>
-              <ul className="text-sm text-amber-700 dark:text-amber-400 space-y-1">
+              <ul className="space-y-2">
                 {subType.welfareType.requiredDocuments.map((doc) => (
-                  <li key={doc.id} className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                  <li key={doc.id} className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+                    <CheckCircle2 className="w-4 h-4 text-amber-500" />
                     {doc.name}
-                    {doc.isRequired && <span className="text-red-500">*</span>}
+                    {doc.isRequired && <span className="text-red-500 font-medium">*</span>}
                   </li>
                 ))}
               </ul>
             </div>
           )}
 
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1">
+            <Info className="w-4 h-4" />
             รองรับไฟล์: PDF, Word, Excel, รูปภาพ (สูงสุด 10MB/ไฟล์)
           </p>
-          <input
-            type="file"
-            multiple
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900 dark:file:text-brand-300"
-          />
+
+          {/* File Upload Area */}
+          <label className="block">
+            <div className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-blue-400 dark:hover:border-blue-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+              <div className="text-center">
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-medium text-blue-600 dark:text-blue-400">คลิกเพื่ออัปโหลด</span> หรือลากไฟล์มาวาง
+                </p>
+              </div>
+            </div>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
           
           {/* File List */}
           {formData.files.length > 0 && (
             <div className="mt-4 space-y-2">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                ไฟล์ที่เลือก ({formData.files.length} ไฟล์)
+              </p>
               {formData.files.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-700 dark:to-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600 group hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
                 >
-                  <div className="flex items-center space-x-3">
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
+                  <div className="flex items-center gap-3">
+                    {getFileIcon(file.type)}
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px]">
                         {file.name}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -605,16 +725,9 @@ function SubmitClaimForm() {
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               ))}
@@ -623,17 +736,18 @@ function SubmitClaimForm() {
         </div>
 
         {/* Submit Buttons */}
-        <div className="flex justify-end space-x-4">
+        <div className="flex justify-end gap-4 pt-4">
           <Link
             href="/welfare"
-            className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium flex items-center gap-2"
           >
+            <X className="w-4 h-4" />
             ยกเลิก
           </Link>
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-2 bg-brand-500 hover:bg-brand-600 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center space-x-2"
+            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl transition-all font-medium flex items-center gap-2 shadow-md hover:shadow-lg disabled:shadow-none"
           >
             {submitting ? (
               <>
@@ -641,7 +755,10 @@ function SubmitClaimForm() {
                 <span>กำลังยื่นคำร้อง...</span>
               </>
             ) : (
-              <span>ยื่นคำร้อง</span>
+              <>
+                <Send className="w-4 h-4" />
+                <span>ยื่นคำร้อง</span>
+              </>
             )}
           </button>
         </div>

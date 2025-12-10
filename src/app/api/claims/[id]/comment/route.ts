@@ -39,7 +39,7 @@ export async function POST(
       where: { id: claimId },
       include: {
         user: true,
-        welfare: true,
+        welfareSubType: true,
       },
     });
 

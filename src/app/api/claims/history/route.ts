@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
             title: true,
           },
         },
-        welfare: {
+        welfareSubType: {
           select: {
             name: true,
             description: true,
