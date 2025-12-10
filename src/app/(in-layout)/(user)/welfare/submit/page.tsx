@@ -5,6 +5,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { PageLoading, InlineLoading } from "@/components/ui/loading";
+import { toast } from "react-toastify";
 
 interface RequiredDocument {
   id: string;
@@ -243,13 +244,15 @@ function SubmitClaimForm() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("ยื่นคำร้องสำเร็จ!");
+        toast.success("ยื่นคำร้องสำเร็จ!");
         router.push("/claims");
       } else {
         setError(data.error || "เกิดข้อผิดพลาดในการยื่นคำร้อง");
+        toast.error(data.error || "เกิดข้อผิดพลาดในการยื่นคำร้อง");
       }
     } catch (error) {
       console.error("Error submitting claim:", error);
+      toast.error("เกิดข้อผิดพลาดในการยื่นคำร้อง");
       setError("เกิดข้อผิดพลาดในการยื่นคำร้อง");
     } finally {
       setSubmitting(false);
