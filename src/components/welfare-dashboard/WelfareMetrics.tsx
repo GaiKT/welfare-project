@@ -31,7 +31,7 @@ export const WelfareMetrics: React.FC<WelfareMetricsProps> = ({ data }) => {
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              พนักงาน
+              สมาชิก
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
               {data.totalUsers.toLocaleString()}
