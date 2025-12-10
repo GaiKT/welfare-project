@@ -841,7 +841,7 @@ export default function AdminClaimDetailPage() {
                     <FileText className="w-5 h-5 text-white" />
                   </div>
                   {(claim.approvals.length > 0 || claim.status !== "PENDING") && (
-                    <div className="w-0.5 h-full bg-gradient-to-b from-blue-300 to-gray-300 dark:from-blue-600 dark:to-gray-600 mt-2"></div>
+                    <div className="w-0.5 h-5 bg-gradient-to-b from-blue-300 to-gray-300 dark:from-blue-600 dark:to-gray-600 mt-2"></div>
                   )}
                 </div>
                 <div className="flex-1 pb-4">
@@ -871,7 +871,7 @@ export default function AdminClaimDetailPage() {
                       )}
                     </div>
                     {index < claim.approvals.length - 1 && (
-                      <div className={`w-0.5 h-full mt-2 ${
+                      <div className={`w-0.5 h-5 mt-2 ${
                         approval.status === "REJECTED" 
                           ? "bg-gradient-to-b from-red-300 to-gray-300 dark:from-red-600 dark:to-gray-600"
                           : "bg-gradient-to-b from-emerald-300 to-gray-300 dark:from-emerald-600 dark:to-gray-600"
