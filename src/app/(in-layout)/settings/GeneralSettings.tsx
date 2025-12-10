@@ -497,7 +497,7 @@ export default function GeneralSettings() {
       <div className="grid gap-6 lg:grid-cols-4">
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/5">
             <nav className="space-y-1">
               {settingSections.map((section) => (
                 <button
@@ -532,7 +532,7 @@ export default function GeneralSettings() {
 
         {/* Content */}
         <div className="lg:col-span-3">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/5">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">
               {settingSections.find((s) => s.id === activeSection)?.title}
             </h2>

@@ -43,12 +43,29 @@ interface ClaimComment {
 
 interface ClaimDetail {
   id: string;
-  welfare: {
+  welfareSubType: {
     id: string;
+    code: string;
     name: string;
-    description: string | null;
+    amount: number;
+    unitType: string;
+    maxPerRequest: number | null;
+    maxPerYear: number | null;
+    maxLifetime: number | null;
+    maxClaimsLifetime: number | null;
+    welfareType: {
+      id: string;
+      code: string;
+      name: string;
+      requiredDocuments: {
+        id: string;
+        name: string;
+        isRequired: boolean;
+      }[];
+    };
   };
   user: {
+    id: string;
     identity: string;
     firstName: string;
     lastName: string;
@@ -56,21 +73,34 @@ interface ClaimDetail {
     email: string | null;
     phone: string | null;
   };
-  amount: number;
+  requestedAmount: number;
+  approvedAmount: number | null;
+  nights: number | null;
+  beneficiaryName: string | null;
+  beneficiaryRelation: string | null;
+  description: string | null;
+  incidentDate: string | null;
+  hospitalName: string | null;
+  admissionDate: string | null;
+  dischargeDate: string | null;
   status: string;
-  description: string;
   fiscalYear: number;
+  submittedDate: string;
   createdAt: string;
   documents: ClaimDocument[];
   approvals: ClaimApproval[];
   comments: ClaimComment[];
   adminApprover: {
+    id: string;
     name: string;
     username: string;
+    signatureUrl: string | null;
   } | null;
   managerApprover: {
+    id: string;
     name: string;
     username: string;
+    signatureUrl: string | null;
   } | null;
   adminApprovedAt: string | null;
   completedDate: string | null;
@@ -402,27 +432,30 @@ export default function ManagerApprovalDetailPage() {
                 <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   สวัสดิการ
                 </label>
-                <p className="text-lg text-gray-900 dark:text-white">{claim.welfare.name}</p>
-                {claim.welfare.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {claim.welfare.description}
-                  </p>
-                )}
+                <p className="text-lg text-gray-900 dark:text-white">{claim.welfareSubType.welfareType.name}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {claim.welfareSubType.name}
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  จำนวนเงิน
+                  จำนวนเงินที่ขอเบิก
                 </label>
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {claim.amount.toLocaleString()} บาท
+                  {claim.requestedAmount.toLocaleString()} บาท
                 </p>
+                {claim.approvedAmount && (
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                    อนุมัติ: {claim.approvedAmount.toLocaleString()} บาท
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   รายละเอียด
                 </label>
                 <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
-                  {claim.description}
+                  {claim.description || "-"}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -494,7 +527,7 @@ export default function ManagerApprovalDetailPage() {
                   rel="noopener noreferrer"
                   className="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                 >
-                  <div className="flex-shrink-0">{getFileIcon(doc.fileType)}</div>
+                  <div className="flex">{getFileIcon(doc.fileType)}</div>
                   <div className="ml-3 flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {doc.fileName}
@@ -504,7 +537,7 @@ export default function ManagerApprovalDetailPage() {
                     </p>
                   </div>
                   <svg
-                    className="w-5 h-5 text-gray-400 flex-shrink-0"
+                    className="w-5 h-5 text-gray-400 flex"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

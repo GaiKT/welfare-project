@@ -236,7 +236,7 @@ function ResetPasswordConfirmForm() {
               <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <div className="flex items-start gap-3">
                   <svg
-                    className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0"
+                    className="w-5 h-5 text-blue-500 mt-0.5 flex"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

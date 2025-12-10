@@ -259,7 +259,7 @@ export default function UsersManagement() {
       </div>
 
       {/* Search */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/5">
         <Input
           type="text"
           placeholder="ค้นหาด้วย รหัสพนักงาน, ชื่อ, นามสกุล หรือ อีเมล..."
@@ -268,7 +268,7 @@ export default function UsersManagement() {
       </div>
 
       {/* Users Table */}
-      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/5">
         <div className="max-w-full overflow-x-auto">
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-gray-800">

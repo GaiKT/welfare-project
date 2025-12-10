@@ -6,8 +6,10 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { PageLoading } from "@/components/ui/loading";
 
+// Types based on Prisma schema
 interface ClaimDocument {
   id: string;
+  documentName?: string;
   fileName: string;
   fileUrl: string;
   fileType: string;
@@ -18,61 +20,94 @@ interface ClaimDocument {
 interface ClaimApproval {
   id: string;
   status: string;
+  approverRole: string;
   comments: string | null;
   approvedAt: string;
   approver: {
     name: string;
     username: string;
     role: string;
+    signatureUrl?: string | null;
   };
 }
 
 interface ClaimComment {
   id: string;
   comment: string;
-  userType: string;
+  userType: "ADMIN" | "USER";
   createdAt: string;
   user?: {
     firstName: string;
     lastName: string;
-  };
-  admin?: {
+  } | null;
+}
+
+interface RequiredDocument {
+  id: string;
+  name: string;
+  isRequired: boolean;
+}
+
+interface WelfareSubType {
+  id: string;
+  code: string;
+  name: string;
+  amount: number;
+  unitType: "LUMP_SUM" | "PER_NIGHT" | "PER_INCIDENT";
+  maxPerRequest: number | null;
+  maxPerYear: number | null;
+  maxLifetime: number | null;
+  maxClaimsLifetime: number | null;
+  welfareType: {
+    id: string;
+    code: string;
     name: string;
+    requiredDocuments: RequiredDocument[];
   };
+}
+
+interface ClaimUser {
+  id: string;
+  identity: string;
+  firstName: string;
+  lastName: string;
+  title: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+interface Approver {
+  id: string;
+  name: string;
+  username: string;
+  signatureUrl: string | null;
 }
 
 interface ClaimDetail {
   id: string;
-  welfare: {
-    id: string;
-    name: string;
-    description: string | null;
-  };
-  user: {
-    identity: string;
-    firstName: string;
-    lastName: string;
-    title: string | null;
-    email: string | null;
-    phone: string | null;
-  };
-  amount: number;
-  status: string;
-  description: string;
+  welfareSubType: WelfareSubType;
+  user: ClaimUser;
+  requestedAmount: number;
+  approvedAmount: number | null;
+  nights: number | null;
+  beneficiaryName: string | null;
+  beneficiaryRelation: "SELF" | "SPOUSE" | "CHILD" | "FATHER" | "MOTHER" | null;
+  description: string | null;
+  incidentDate: string | null;
+  hospitalName: string | null;
+  admissionDate: string | null;
+  dischargeDate: string | null;
+  status: "PENDING" | "IN_REVIEW" | "ADMIN_APPROVED" | "MANAGER_APPROVED" | "REJECTED" | "COMPLETED";
   fiscalYear: number;
+  submittedDate: string;
   createdAt: string;
   documents: ClaimDocument[];
   approvals: ClaimApproval[];
   comments: ClaimComment[];
-  adminApprover: {
-    name: string;
-    username: string;
-  } | null;
-  managerApprover: {
-    name: string;
-    username: string;
-  } | null;
+  adminApprover: Approver | null;
+  managerApprover: Approver | null;
   adminApprovedAt: string | null;
+  managerApprovedAt?: string | null;
   completedDate: string | null;
   rejectionReason: string | null;
 }
@@ -91,6 +126,8 @@ export default function AdminClaimDetailPage() {
   const [processing, setProcessing] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [approvedAmount, setApprovedAmount] = useState<string>("");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -159,16 +196,19 @@ export default function AdminClaimDetailPage() {
   };
 
   const handleApprove = async () => {
+    // สำหรับ Manager ให้เปิด Modal เพื่อกรอกจำนวนเงินที่อนุมัติ
+    if (session?.user?.role === "MANAGER") {
+      setApprovedAmount(claim?.requestedAmount?.toString() || "");
+      setShowApproveModal(true);
+      return;
+    }
+
+    // สำหรับ Admin อนุมัติได้เลย
     if (!confirm("คุณต้องการอนุมัติคำร้องนี้ใช่หรือไม่?")) return;
 
     try {
       setProcessing(true);
-      const endpoint =
-        session?.user?.role === "MANAGER"
-          ? `/api/claims/${claimId}/manager-approve`
-          : `/api/claims/${claimId}/admin-approve`;
-
-      const response = await fetch(endpoint, {
+      const response = await fetch(`/api/claims/${claimId}/admin-approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comments: commentText || undefined }),
@@ -177,6 +217,41 @@ export default function AdminClaimDetailPage() {
       if (response.ok) {
         alert("อนุมัติคำร้องสำเร็จ");
         setCommentText("");
+        fetchClaimDetail();
+      } else {
+        const data = await response.json();
+        alert(data.error || "เกิดข้อผิดพลาดในการอนุมัติ");
+      }
+    } catch (error) {
+      console.error("Error approving claim:", error);
+      alert("เกิดข้อผิดพลาดในการอนุมัติ");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleManagerApprove = async () => {
+    if (!approvedAmount || parseFloat(approvedAmount) <= 0) {
+      alert("กรุณาระบุจำนวนเงินที่อนุมัติ");
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      const response = await fetch(`/api/claims/${claimId}/manager-approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          comments: commentText || undefined,
+          approvedAmount: parseFloat(approvedAmount),
+        }),
+      });
+
+      if (response.ok) {
+        alert("อนุมัติคำร้องสำเร็จ");
+        setCommentText("");
+        setApprovedAmount("");
+        setShowApproveModal(false);
         fetchClaimDetail();
       } else {
         const data = await response.json();
@@ -201,7 +276,7 @@ export default function AdminClaimDetailPage() {
       const response = await fetch(`/api/claims/${claimId}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: rejectionReason }),
+        body: JSON.stringify({ rejectionReason }),
       });
 
       if (response.ok) {
@@ -431,27 +506,30 @@ export default function AdminClaimDetailPage() {
                 <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   สวัสดิการ
                 </label>
-                <p className="text-lg text-gray-900 dark:text-white">{claim.welfare.name}</p>
-                {claim.welfare.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {claim.welfare.description}
-                  </p>
-                )}
+                <p className="text-lg text-gray-900 dark:text-white">{claim.welfareSubType.welfareType.name}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {claim.welfareSubType.name}
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  จำนวนเงิน
+                  จำนวนเงินที่ขอเบิก
                 </label>
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {claim.amount.toLocaleString()} บาท
+                  {claim.requestedAmount.toLocaleString()} บาท
                 </p>
+                {claim.approvedAmount && (
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                    อนุมัติ: {claim.approvedAmount.toLocaleString()} บาท
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   รายละเอียด
                 </label>
                 <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
-                  {claim.description}
+                  {claim.description || "-"}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -556,15 +634,23 @@ export default function AdminClaimDetailPage() {
                   key={comment.id}
                   className={`p-4 rounded-lg ${
                     comment.userType === "USER"
-                      ? "bg-blue-50 dark:bg-blue-900/20 ml-0 mr-12"
-                      : "bg-gray-50 dark:bg-gray-700 ml-12 mr-0"
+                      ? "bg-blue-50 dark:bg-blue-900/20 ml-0 mr-12 border-l-4 border-blue-400"
+                      : "bg-gray-50 dark:bg-gray-700 ml-12 mr-0 border-l-4 border-gray-400"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {comment.userType === "USER"
-                        ? `${comment.user?.firstName || ""} ${comment.user?.lastName || ""}`.trim()
-                        : comment.admin?.name || "ผู้ดูแลระบบ"}
+                    <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center">
+                      {comment.userType === "USER" ? (
+                        <>
+                          <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                          {comment.user ? `${comment.user.firstName} ${comment.user.lastName}` : "ผู้ใช้งาน"}
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                          ผู้ดูแลระบบ
+                        </>
+                      )}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {new Date(comment.createdAt).toLocaleString("th-TH")}
@@ -797,6 +883,65 @@ export default function AdminClaimDetailPage() {
                 onClick={() => {
                   setShowRejectModal(false);
                   setRejectionReason("");
+                }}
+                disabled={processing}
+                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white font-medium rounded-lg transition-colors"
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manager Approve Modal */}
+      {showApproveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              อนุมัติคำร้อง (ผู้จัดการ)
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              กรุณาระบุจำนวนเงินที่อนุมัติ
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                จำนวนเงินที่ขอ: {claim?.requestedAmount?.toLocaleString()} บาท
+              </label>
+              <input
+                type="number"
+                value={approvedAmount}
+                onChange={(e) => setApprovedAmount(e.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+                placeholder="จำนวนเงินที่อนุมัติ"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                หมายเหตุ (ถ้ามี)
+              </label>
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+                placeholder="หมายเหตุการอนุมัติ..."
+              />
+            </div>
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={handleManagerApprove}
+                disabled={processing || !approvedAmount || parseFloat(approvedAmount) <= 0}
+                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors"
+              >
+                {processing ? "กำลังดำเนินการ..." : "ยืนยันอนุมัติ"}
+              </button>
+              <button
+                onClick={() => {
+                  setShowApproveModal(false);
+                  setApprovedAmount("");
                 }}
                 disabled={processing}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white font-medium rounded-lg transition-colors"

@@ -164,7 +164,7 @@ export default function WelfarePage() {
         {welfareTypes.map((welfareType) => (
           <div
             key={welfareType.id}
-            className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden"
+            className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/5 overflow-hidden"
           >
             {/* Type Header */}
             <div
@@ -280,7 +280,7 @@ export default function WelfarePage() {
                           </div>
 
                           {/* Action */}
-                          <div className="flex-shrink-0">
+                          <div className="flex">
                             {canClaim ? (
                               <Link
                                 href={`/welfare/submit?subTypeId=${subType.id}`}
@@ -331,7 +331,7 @@ export default function WelfarePage() {
         ))}
 
         {welfareTypes.length === 0 && (
-          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-12 text-center">
+          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/5 p-12 text-center">
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
               fill="none"
@@ -358,7 +358,7 @@ export default function WelfarePage() {
       {/* Info Box */}
       <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
         <div className="flex">
-          <div className="flex shrink-0">
+          <div className="flex">
             <svg
               className="h-5 w-5 text-blue-400"
               fill="currentColor"

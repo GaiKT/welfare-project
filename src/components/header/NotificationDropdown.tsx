@@ -313,7 +313,7 @@ export default function NotificationDropdown() {
                     }`}
                   >
                     <span
-                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${color}`}
+                      className={`flex h-10 w-10 flex items-center justify-center rounded-full ${color}`}
                     >
                       {icon}
                     </span>

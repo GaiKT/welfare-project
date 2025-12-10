@@ -8,9 +8,18 @@ import { PageLoading } from "@/components/ui/loading";
 
 interface Claim {
   id: string;
-  welfare: {
-    id: string;
+  welfareSubType: {
+    code: string;
     name: string;
+    amount: number;
+    unitType: string;
+    maxPerRequest: number | null;
+    maxPerYear: number | null;
+    maxLifetime: number | null;
+    welfareType: {
+      code: string;
+      name: string;
+    };
   };
   user: {
     identity: string;
@@ -18,13 +27,32 @@ interface Claim {
     lastName: string;
     title: string | null;
   };
-  amount: number;
+  requestedAmount: number;
+  approvedAmount: number | null;
+  nights: number | null;
+  beneficiaryName: string | null;
+  beneficiaryRelation: string | null;
+  description: string | null;
+  incidentDate: string | null;
+  hospitalName: string | null;
+  admissionDate: string | null;
+  dischargeDate: string | null;
   status: string;
-  description: string;
+  fiscalYear: number;
+  submittedDate: string;
+  completedDate: string | null;
+  rejectionReason: string | null;
   createdAt: string;
   _count: {
-    documents: number;
+    comments: number;
   };
+  documents: {
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    fileSize: number;
+  }[];
 }
 
 export default function AdminClaimsPage() {
@@ -228,7 +256,10 @@ export default function AdminClaimsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900 dark:text-white">
-                      {claim.welfare.name}
+                      {claim.welfareSubType.welfareType.name}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {claim.welfareSubType.name}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
                       <svg
@@ -244,12 +275,12 @@ export default function AdminClaimsPage() {
                           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      {claim._count.documents} ไฟล์
+                      {claim.documents?.length || 0} ไฟล์
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                      {claim.amount.toLocaleString()} ฿
+                      {claim.requestedAmount.toLocaleString()} ฿
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

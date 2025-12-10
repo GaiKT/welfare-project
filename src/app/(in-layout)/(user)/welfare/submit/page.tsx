@@ -382,7 +382,7 @@ function SubmitClaimForm() {
 
         {/* Nights Input - Only for PER_NIGHT type */}
         {subType.unitType === "PER_NIGHT" && (
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               จำนวนคืนที่เข้าพักรักษา <span className="text-red-500">*</span>
             </label>
@@ -436,7 +436,7 @@ function SubmitClaimForm() {
 
         {/* Beneficiary Info - For certain welfare types */}
         {(subType.welfareType.code === "FUNERAL" || subType.welfareType.code === "NEWBORN") && (
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
             <h4 className="font-medium text-gray-800 dark:text-white mb-3">ข้อมูลผู้รับสิทธิ์</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -473,7 +473,7 @@ function SubmitClaimForm() {
 
         {/* Incident Date - For certain welfare types */}
         {(subType.welfareType.code === "FUNERAL" || subType.welfareType.code === "DISASTER" || subType.welfareType.code === "MARRIAGE") && (
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               วันที่เกิดเหตุการณ์
             </label>
@@ -487,7 +487,7 @@ function SubmitClaimForm() {
         )}
 
         {/* Amount */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             จำนวนเงินที่ขอ <span className="text-red-500">*</span>
           </label>
@@ -518,7 +518,7 @@ function SubmitClaimForm() {
         </div>
 
         {/* Description */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             รายละเอียดเพิ่มเติม
           </label>
@@ -532,7 +532,7 @@ function SubmitClaimForm() {
         </div>
 
         {/* Required Documents */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-4">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/5 p-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             แนบเอกสารประกอบ <span className="text-red-500">*</span>
           </label>

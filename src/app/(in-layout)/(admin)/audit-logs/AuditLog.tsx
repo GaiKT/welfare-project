@@ -194,7 +194,7 @@ export default function AuditLogPage() {
       </div>
 
       {/* Filters */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/5">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -283,7 +283,7 @@ export default function AuditLogPage() {
       </div>
 
       {/* Audit Logs Table */}
-      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/5">
         <div className="max-w-full overflow-x-auto">
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-gray-800">
@@ -425,7 +425,7 @@ export default function AuditLogPage() {
       </div>
 
       {/* Summary */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/5">
         <p className="text-sm text-gray-500 dark:text-gray-400">
           รวมทั้งหมด {pagination.total} รายการ
         </p>

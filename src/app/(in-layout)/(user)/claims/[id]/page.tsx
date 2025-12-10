@@ -488,7 +488,7 @@ export default function ClaimDetailPage() {
                     rel="noopener noreferrer"
                     className="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                   >
-                    <div className="flex-shrink-0">{getFileIcon(doc.fileType)}</div>
+                    <div className="flex">{getFileIcon(doc.fileType)}</div>
                     <div className="ml-3 flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {doc.documentName || "เอกสารแนบ"}
@@ -500,7 +500,7 @@ export default function ClaimDetailPage() {
                         {formatFileSize(doc.fileSize)}
                       </p>
                     </div>
-                    <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-gray-400 flex" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </a>

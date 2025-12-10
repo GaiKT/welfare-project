@@ -410,7 +410,7 @@ export default function WelfareManagement() {
       </div>
 
       {/* Search */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/5">
         <input
           type="text"
           placeholder="ค้นหาสวัสดิการ..."
@@ -422,17 +422,17 @@ export default function WelfareManagement() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/5">
           <p className="text-sm text-gray-500 dark:text-gray-400">ประเภทสวัสดิการ</p>
           <p className="text-2xl font-bold text-gray-800 dark:text-white">{welfareTypes.length}</p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/5">
           <p className="text-sm text-gray-500 dark:text-gray-400">ประเภทย่อยทั้งหมด</p>
           <p className="text-2xl font-bold text-gray-800 dark:text-white">
             {welfareTypes.reduce((sum, wt) => sum + wt.subTypes.length, 0)}
           </p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/5">
           <p className="text-sm text-gray-500 dark:text-gray-400">เอกสารที่ต้องแนบ</p>
           <p className="text-2xl font-bold text-gray-800 dark:text-white">
             {welfareTypes.reduce((sum, wt) => sum + wt.requiredDocuments.length, 0)}
@@ -446,7 +446,7 @@ export default function WelfareManagement() {
           filteredWelfareTypes.map((welfareType) => (
             <div
               key={welfareType.id}
-              className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden"
+              className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/5 overflow-hidden"
             >
               {/* Header Row */}
               <div
@@ -603,7 +603,7 @@ export default function WelfareManagement() {
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-gray-800 dark:bg-white/5">
             <p className="text-gray-500 dark:text-gray-400">ไม่พบข้อมูลสวัสดิการ</p>
           </div>
         )}

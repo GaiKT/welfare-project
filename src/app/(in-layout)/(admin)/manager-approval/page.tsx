@@ -8,9 +8,15 @@ import { PageLoading } from "@/components/ui/loading";
 
 interface Claim {
   id: string;
-  welfare: {
-    id: string;
+  welfareSubType: {
+    code: string;
     name: string;
+    amount: number;
+    unitType: string;
+    welfareType: {
+      code: string;
+      name: string;
+    };
   };
   user: {
     identity: string;
@@ -18,16 +24,24 @@ interface Claim {
     lastName: string;
     title: string | null;
   };
-  amount: number;
+  requestedAmount: number;
+  approvedAmount: number | null;
   status: string;
-  description: string;
+  description: string | null;
   createdAt: string;
   adminApprovedAt: string | null;
   adminApprover: {
     name: string;
   } | null;
+  documents: {
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    fileSize: number;
+  }[];
   _count: {
-    documents: number;
+    comments: number;
   };
 }
 
@@ -144,7 +158,10 @@ export default function ManagerApprovalPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900 dark:text-white">
-                      {claim.welfare.name}
+                      {claim.welfareSubType.welfareType.name}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {claim.welfareSubType.name}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
                       <svg
@@ -160,12 +177,12 @@ export default function ManagerApprovalPage() {
                           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      {claim._count.documents} ไฟล์
+                      {claim.documents?.length || 0} ไฟล์
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                      {claim.amount.toLocaleString()} ฿
+                      {claim.requestedAmount.toLocaleString()} ฿
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -271,7 +288,7 @@ export default function ManagerApprovalPage() {
               จำนวนเงินรวม
             </div>
             <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
-              {claims.reduce((sum, claim) => sum + claim.amount, 0).toLocaleString()} ฿
+              {claims.reduce((sum, claim) => sum + claim.requestedAmount, 0).toLocaleString()} ฿
             </div>
           </div>
           <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">

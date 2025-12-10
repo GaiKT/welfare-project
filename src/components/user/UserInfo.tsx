@@ -55,7 +55,7 @@ export default function UserInfo({ showDetails = true, className = "" }: UserInf
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
       {/* User Avatar */}
-      <div className="flex-shrink-0">
+      <div className="flex">
         <div className="w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center">
           {user.image ? (
             <Image

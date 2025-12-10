@@ -129,7 +129,7 @@ export default function RoleBasedNavigation({ className = "" }: RoleBasedNavigat
             }`}
           >
             {item.icon && (
-              <span className={`mr-3 flex-shrink-0 h-5 w-5 ${
+              <span className={`mr-3 flex h-5 w-5 ${
                 isActive ? "text-brand-500" : "text-gray-400 group-hover:text-gray-500"
               }`}>
                 {item.icon}
